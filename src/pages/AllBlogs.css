@@ -1,0 +1,144 @@
+.all-blogs-page {
+  padding: 20px;
+}
+
+.blog-card {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.blog-search-container {
+  position: relative;
+}
+
+.blog-search-container .c-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+}
+
+.blog-table-container {
+  overflow-x: auto;
+}
+
+.blog-table {
+  margin-bottom: 0;
+}
+
+.blog-title-cell {
+  max-width: 300px;
+  min-width: 250px;
+}
+
+.blog-description-cell {
+  max-width: 400px;
+  min-width: 300px;
+}
+
+.blog-cover-image {
+  width: 60px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+  margin-top: 8px;
+}
+
+.blog-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.blog-actions .btn {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.read-count {
+  font-weight: 600;
+  color: #495057;
+  background-color: #f8f9fa;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.blog-loading {
+  text-align: center;
+  padding: 40px;
+}
+
+.blog-error {
+  margin-bottom: 20px;
+}
+
+.blog-empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+}
+
+.blog-empty-state .c-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.blog-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.blog-modal .modal-content {
+  border-radius: 8px;
+}
+
+/* Status badge styling */
+.badge {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.badge-success {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+.badge-warning {
+  background-color: #fff3cd;
+  color: #664d03;
+}
+
+.badge-secondary {
+  background-color: #e2e3e5;
+  color: #41464b;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .blog-title-cell,
+  .blog-description-cell {
+    max-width: 200px;
+    min-width: 150px;
+  }
+  
+  .blog-cover-image {
+    width: 40px;
+    height: 30px;
+  }
+  
+  .blog-actions {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .blog-actions .btn {
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+} 
