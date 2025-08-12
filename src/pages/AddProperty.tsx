@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CIcon from '@coreui/icons-react';
 import { 
@@ -26,6 +26,7 @@ import {
   cilPlus
 } from '@coreui/icons';
 import CustomAlert from '../components/CustomAlert';
+import { config } from '../config/env';
 
 interface PropertyFormData {
   type_of_establishment: string;
@@ -113,6 +114,7 @@ const AddProperty = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [connectivityIndex, setConnectivityIndex] = useState(0);
+  const [establishmentTypes, setEstablishmentTypes] = useState<Array<{id: number, establishment_type: string, status: number}>>([]);
 
   // Alert state
   const [alertConfig, setAlertConfig] = useState({
@@ -188,6 +190,24 @@ const AddProperty = () => {
     }));
   };
 
+  // Fetch establishment types on component mount
+  useEffect(() => {
+    const fetchEstablishmentTypes = async () => {
+      try {
+        const response = await fetch('http://107.22.44.203:3000/api/v1/workspace/establishment/list');
+        const data = await response.json();
+        
+        if (data.status && data.data?.data) {
+          setEstablishmentTypes(data.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching establishment types:', error);
+      }
+    };
+
+    fetchEstablishmentTypes();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -236,7 +256,7 @@ const AddProperty = () => {
         console.warn('Failed to parse userData for organization_id', e);
       }
 
-      const response = await fetch('http://3.110.153.105:3000/api/v1/add/property', {
+      const response = await fetch(`${config.API_BASE_URL}/add/property`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -299,14 +319,18 @@ const AddProperty = () => {
                   
                   <div className="mb-3">
                     <label className="form-label">Type of Establishment *</label>
-                    <input
-                      type="text"
-                      className="form-control"
+                    <select
+                      className="form-select"
                       name="type_of_establishment"
                       value={formData.type_of_establishment}
                       onChange={handleInputChange}
                       required
-                    />
+                    >
+                      <option value="">Select Establishment Type</option>
+                      {establishmentTypes.map(type => (
+                        <option key={type.id} value={type.establishment_type}>{type.establishment_type}</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="mb-3">

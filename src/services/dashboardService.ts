@@ -1,5 +1,7 @@
 import { apiService } from './api';
-const API_BASE_URL = "http://3.110.153.105:3000/api/v1";
+import { config } from '../config/env';
+
+const API_BASE_URL = config.API_BASE_URL;
 
 export interface DashboardStats {
   totalUsers: number;

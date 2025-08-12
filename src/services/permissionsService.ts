@@ -175,6 +175,40 @@ export const permissionsService = {
         ]
       },
       {
+        title: 'Space Types',
+        path: '/space-types',
+        icon: 'cilBuilding',
+        moduleName: 'Property Management',
+        children: [
+          {
+            title: 'Space Types List',
+            path: '/space-types/list',
+            icon: 'cilList',
+            moduleName: 'Property Management'
+          }
+        ]
+      },
+      {
+        title: 'Establishment Types',
+        path: '/establishment',
+        icon: 'cilBuilding',
+        moduleName: 'Property Management',
+        children: [
+          {
+            title: 'Add Establishment Type',
+            path: '/establishment/add',
+            icon: 'cilPlus',
+            moduleName: 'Property Management'
+          },
+          {
+            title: 'List Establishment Types',
+            path: '/establishment/list',
+            icon: 'cilList',
+            moduleName: 'Property Management'
+          }
+        ]
+      },
+      {
         title: 'Blogs',
         path: '/blogs',
         icon: 'cilNewspaper',

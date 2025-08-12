@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CIcon from '@coreui/icons-react';
 import { cilBriefcase, cilSearch, cilX, cilPencil, cilTrash, cilLocationPin, cilTag, cilClock } from '@coreui/icons';
 import { apiService } from '../services/api';
+import { config } from '../config/env';
 
 interface Job {
   id: number;
@@ -76,7 +77,7 @@ const ListJobs: React.FC = () => {
         params.append('title', search.trim());
       }
 
-      const response = await apiService.authFetch(`http://3.110.153.105:3000/api/v1/job/list?${params}`, {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/job/list?${params}`, {
         method: 'GET'
       });
 
@@ -139,7 +140,7 @@ const ListJobs: React.FC = () => {
     setError(null);
 
     try {
-      const response = await apiService.authFetch(`http://3.110.153.105:3000/api/v1/job/update/${selectedJob.id}`, {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/job/update/${selectedJob.id}`, {
         method: 'PUT',
         body: JSON.stringify(editForm)
       });
@@ -183,7 +184,7 @@ const ListJobs: React.FC = () => {
     setError(null);
 
     try {
-      const response = await apiService.authFetch(`http://3.110.153.105:3000/api/v1/job/delete/${selectedJob.id}`, {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/job/delete/${selectedJob.id}`, {
         method: 'DELETE'
       });
 

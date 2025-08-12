@@ -20,6 +20,7 @@ import {
 } from '@coreui/icons';
 import CustomAlert from '../components/CustomAlert';
 import { apiService } from '../services/api';
+import { config } from '../config/env';
 
 const AddPartner = () => {
   const navigate = useNavigate();
@@ -81,7 +82,7 @@ const AddPartner = () => {
     setIsLoading(true);
     
     try {
-      const response = await apiService.authFetch('http://3.110.153.105:3000/api/v1/vender/add', {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/vender/add`, {
         method: 'POST',
         body: JSON.stringify(formData)
       });

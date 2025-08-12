@@ -4,6 +4,7 @@ import { CCard, CCardHeader, CCardBody, CForm, CFormLabel, CFormInput, CFormText
 import CIcon from '@coreui/icons-react';
 import { cilSave, cilArrowLeft } from '@coreui/icons';
 import { apiService } from '../services/api';
+import { config } from '../config/env';
 
 // Type casting for CoreUI components
 const CCardComponent = CCard as React.ComponentType<any>;
@@ -47,7 +48,7 @@ const AddRole: React.FC = () => {
     setSuccess(null);
 
     try {
-      const response = await apiService.authFetch('http://3.110.153.105:3000/api/v1/role/add', {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/role/add`, {
         method: 'POST',
         body: JSON.stringify(formData)
       });

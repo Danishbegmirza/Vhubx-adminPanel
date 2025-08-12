@@ -3,6 +3,7 @@ import CIcon from '@coreui/icons-react';
 import { cilSearch, cilArrowBottom, cilArrowLeft, cilInfo, cilCheck, cilX } from '@coreui/icons';
 import CustomAlert from '../components/CustomAlert';
 import { apiService } from '../services/api';
+import { config } from '../config/env';
 
 interface PartnerRequest {
   id: number;
@@ -114,7 +115,7 @@ const PartnerRequests = () => {
       setLoading(true);
       setError(null);
       
-      let url = `http://3.110.153.105:3000/api/v1/partner/list?page=${page}&limit=20`;
+      let url = `${config.API_BASE_URL}/partner/list?page=${page}&limit=20`;
       if (search) {
         url += `&search=${encodeURIComponent(search)}`;
       }

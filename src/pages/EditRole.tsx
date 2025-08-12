@@ -4,6 +4,7 @@ import { CCard, CCardHeader, CCardBody, CForm, CFormLabel, CFormInput, CFormText
 import CIcon from '@coreui/icons-react';
 import { cilSave, cilArrowLeft, cilPencil } from '@coreui/icons';
 import { apiService } from '../services/api';
+import { config } from '../config/env';
 
 // Type casting for CoreUI components
 const CCardComponent = CCard as React.ComponentType<any>;
@@ -48,7 +49,7 @@ const EditRole: React.FC = () => {
 
     try {
       // First, fetch all roles to get the current role data
-      const response = await apiService.authFetch('http://3.110.153.105:3000/api/v1/role/list', {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/role/list`, {
         method: 'GET'
       });
 
@@ -89,7 +90,7 @@ const EditRole: React.FC = () => {
     setSuccess(null);
 
     try {
-      const response = await apiService.authFetch(`http://3.110.153.105:3000/api/v1/role/update/${id}`, {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/role/update/${id}`, {
         method: 'PUT',
         body: JSON.stringify(formData)
       });

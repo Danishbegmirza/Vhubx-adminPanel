@@ -4,6 +4,7 @@ import CIcon from '@coreui/icons-react';
 import { cilSearch, cilPlus, cilArrowBottom, cilFilter, cilCheck, cilX, cilArrowLeft } from '@coreui/icons';
 import CustomAlert from '../components/CustomAlert';
 import { apiService } from '../services/api';
+import { config } from '../config/env';
 
 interface User {
   userid: number;
@@ -112,7 +113,7 @@ const AllUsers = () => {
       setLoading(true);
       const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
       const statusParam = status !== 'all' ? `&status=${status}` : '';
-      const response = await apiService.authFetch(`http://3.110.153.105:3000/api/v1/user/list?page=${page}&limit=10${searchParam}${statusParam}`, {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/user/list?page=${page}&limit=10${searchParam}${statusParam}`, {
         method: 'GET'
       });
 
@@ -143,7 +144,7 @@ const AllUsers = () => {
     setActionError(null);
     try {
       const response = await apiService.authFetch(
-        `http://3.110.153.105:3000/api/v1/user/status/${selectedRequest.userid}`,
+        `${config.API_BASE_URL}/user/status/${selectedRequest.userid}`,
         {
           method: 'PUT',
           body: JSON.stringify({ status }),

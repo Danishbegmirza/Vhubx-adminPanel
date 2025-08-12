@@ -11,7 +11,6 @@ interface FormState {
   password: string;
   user_type: number; // will default to 3
   city: string;
-  orgnaization_id: number | '';
 }
 
 const AddSubUser: React.FC = () => {
@@ -24,8 +23,7 @@ const AddSubUser: React.FC = () => {
     alternatePhone: '',
     password: '',
     user_type: 3,
-    city: '',
-    orgnaization_id: ''
+    city: ''
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +33,7 @@ const AddSubUser: React.FC = () => {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: name === 'orgnaization_id' ? (value === '' ? '' : Number(value)) : value,
+      [name]: value,
     }));
   };
 
@@ -45,7 +43,7 @@ const AddSubUser: React.FC = () => {
     setSuccess(null);
 
     // basic validation
-    if (!form.first_name || !form.last_name || !form.email || !form.phone || !form.password || form.orgnaization_id === '') {
+    if (!form.first_name || !form.last_name || !form.email || !form.phone || !form.password) {
       setError('Please fill in all required fields.');
       return;
     }
@@ -64,7 +62,6 @@ const AddSubUser: React.FC = () => {
           password: form.password,
           user_type: form.user_type,
           city: form.city,
-          orgnaization_id: form.orgnaization_id,
         }),
       });
 
@@ -170,19 +167,6 @@ const AddSubUser: React.FC = () => {
               value={form.city}
               onChange={handleChange}
               className="form-control"
-            />
-          </div>
-
-          <div className="col-md-6">
-            <label className="form-label">Organization ID *</label>
-            <input
-              type="number"
-              name="orgnaization_id"
-              value={form.orgnaization_id}
-              onChange={handleChange}
-              className="form-control"
-              required
-              min={1}
             />
           </div>
         </div>
