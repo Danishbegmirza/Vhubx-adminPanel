@@ -4,6 +4,7 @@ import { CCard, CCardHeader, CCardBody, CTable, CTableHead, CTableRow, CTableHea
 import CIcon from '@coreui/icons-react';
 import { cilReload, cilList, cilTrash, cilPencil, cilPlus } from '@coreui/icons';
 import { apiService } from '../services/api';
+import { config } from '../config/env';
 
 // Type casting for CoreUI components
 const CCardComponent = CCard as React.ComponentType<any>;
@@ -111,7 +112,7 @@ const RolePermissionList: React.FC = () => {
     setInfo(null);
 
     try {
-      const response = await apiService.authFetch('http://3.110.153.105:3000/api/v1/role/permissions/list', {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/role/permissions/list`, {
         method: 'GET'
       });
 

@@ -4,6 +4,7 @@ import CIcon from '@coreui/icons-react';
 import { cilSearch, cilPlus, cilArrowBottom, cilFilter, cilCheck, cilX, cilArrowLeft, cilPencil, cilTrash, cilMap, cilBuilding, cilPhone, cilEnvelopeOpen } from '@coreui/icons';
 import CustomAlert from '../components/CustomAlert';
 import { apiService } from '../services/api';
+import { config } from '../config/env';
 
 interface Partner {
   id: number;
@@ -134,7 +135,7 @@ const AllPartners = () => {
     setError(null);
     
     try {
-      let url = `http://3.110.153.105:3000/api/v1/vendor/list?page=${page}&limit=10`;
+      let url = `${config.API_BASE_URL}/vendor/list?page=${page}&limit=10`;
       
       if (search) {
         url += `&search=${encodeURIComponent(search)}`;
@@ -178,7 +179,7 @@ const AllPartners = () => {
     setActionError(null);
     
     try {
-      const response = await apiService.authFetch(`http://3.110.153.105:3000/api/v1/vendor/status/${partnerId}`, {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/vendor/status/${partnerId}`, {
         method: 'PUT',
         body: JSON.stringify({ status: newStatus })
       });
@@ -220,7 +221,7 @@ const AllPartners = () => {
     setActionError(null);
     
     try {
-      const response = await apiService.authFetch(`http://3.110.153.105:3000/api/v1/vendor/delete/${partnerId}`, {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/vendor/delete/${partnerId}`, {
         method: 'DELETE'
       });
 

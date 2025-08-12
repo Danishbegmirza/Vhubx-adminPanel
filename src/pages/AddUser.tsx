@@ -4,6 +4,7 @@ import CIcon from '@coreui/icons-react';
 import { cilUser, cilEnvelopeOpen, cilShieldAlt, cilSave, cilArrowLeft, cilPhone } from '@coreui/icons';
 import CustomAlert from '../components/CustomAlert';
 import { apiService } from '../services/api';
+import { config } from '../config/env';
 
 const AddUser = () => {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ const AddUser = () => {
     e.preventDefault();
     
     try {
-      const response = await apiService.authFetch('http://3.110.153.105:3000/api/v1/register', {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/register`, {
         method: 'POST',
         body: JSON.stringify({
           ...formData,

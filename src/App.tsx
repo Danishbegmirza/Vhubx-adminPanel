@@ -45,6 +45,10 @@ import AddEditRolePermission from './pages/AddEditRolePermission';
 import PermissionsTest from './components/PermissionsTest';
 import AllSubUsers from './pages/AllSubUsers';
 import AddSubUser from './pages/AddSubUser';
+import EstablishmentList from './pages/EstablishmentList';
+import AddEstablishment from './pages/AddEstablishment';
+import EditEstablishment from './pages/EditEstablishment';
+import SpaceTypeList from './pages/SpaceTypeList';
 
 // Import components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -232,6 +236,10 @@ const AppContent: React.FC = () => {
         <Route path="/permissions-test" element={finalIsAuthenticated ? <AuthenticatedLayout><PermissionsTest /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
         <Route path="/sub-users/add" element={finalIsAuthenticated ? <AuthenticatedLayout><AddSubUser /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
         <Route path="/sub-users/all" element={finalIsAuthenticated ? <AuthenticatedLayout><AllSubUsers /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
+        <Route path="/establishment/list" element={finalIsAuthenticated ? <AuthenticatedLayout><EstablishmentList /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
+        <Route path="/establishment/add" element={finalIsAuthenticated ? <AuthenticatedLayout><AddEstablishment /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
+        <Route path="/establishment/edit/:id" element={finalIsAuthenticated ? <AuthenticatedLayout><EditEstablishment /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
+        <Route path="/space-types/list" element={finalIsAuthenticated ? <AuthenticatedLayout><SpaceTypeList /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
       </Routes>
     </div>
   );

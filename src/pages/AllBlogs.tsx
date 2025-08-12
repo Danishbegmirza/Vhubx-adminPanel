@@ -32,6 +32,7 @@ import {
   cilSearch
 } from '@coreui/icons';
 import { apiService } from '../services/api';
+import { config } from '../config/env';
 
 // Type casting for CoreUI components
 const CCardComponent = CCard as React.ComponentType<any>;
@@ -85,7 +86,7 @@ const AllBlogs: React.FC = () => {
     setError('');
 
     try {
-      let url = `http://3.110.153.105:3000/api/v1/blog/list?page=${page}&limit=10`;
+      let url = `${config.API_BASE_URL}/blog/list?page=${page}&limit=10`;
       if (search) {
         url += `&title=${encodeURIComponent(search)}`;
       }
@@ -129,7 +130,7 @@ const AllBlogs: React.FC = () => {
 
     setDeleteLoading(true);
     try {
-      const response = await apiService.authFetch(`http://3.110.153.105:3000/api/v1/blog/delete/${blogToDelete.id}`, {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/blog/delete/${blogToDelete.id}`, {
         method: 'DELETE'
       });
 

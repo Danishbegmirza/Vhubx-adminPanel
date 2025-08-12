@@ -4,6 +4,7 @@ import { CCard, CCardHeader, CCardBody, CTable, CTableHead, CTableRow, CTableHea
 import CIcon from '@coreui/icons-react';
 import { cilPlus, cilPencil, cilTrash, cilReload } from '@coreui/icons';
 import { apiService } from '../services/api';
+import { config } from '../config/env';
 
 // Type casting for CoreUI components
 const CCardComponent = CCard as React.ComponentType<any>;
@@ -47,7 +48,7 @@ const ListRoles: React.FC = () => {
     setError(null);
 
     try {
-      const response = await apiService.authFetch('http://3.110.153.105:3000/api/v1/role/list', {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/role/list`, {
         method: 'GET'
       });
 
@@ -74,7 +75,7 @@ const ListRoles: React.FC = () => {
 
     setDeleting(true);
     try {
-      const response = await apiService.authFetch(`http://3.110.153.105:3000/api/v1/role/delete/${selectedRole.id}`, {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/role/delete/${selectedRole.id}`, {
         method: 'DELETE'
       });
 

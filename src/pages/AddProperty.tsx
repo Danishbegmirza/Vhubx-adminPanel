@@ -26,6 +26,7 @@ import {
   cilPlus
 } from '@coreui/icons';
 import CustomAlert from '../components/CustomAlert';
+import { config } from '../config/env';
 
 interface PropertyFormData {
   type_of_establishment: string;
@@ -236,7 +237,7 @@ const AddProperty = () => {
         console.warn('Failed to parse userData for organization_id', e);
       }
 
-      const response = await fetch('http://3.110.153.105:3000/api/v1/add/property', {
+      const response = await fetch(`${config.API_BASE_URL}/add/property`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

@@ -4,6 +4,7 @@ import { CCard, CCardHeader, CCardBody, CForm, CFormLabel, CFormInput, CFormSele
 import CIcon from '@coreui/icons-react';
 import { cilSave, cilArrowLeft } from '@coreui/icons';
 import { apiService } from '../services/api';
+import { config } from '../config/env';
 
 const CCardComponent = CCard as React.ComponentType<any>;
 const CCardHeaderComponent = CCardHeader as React.ComponentType<any>;
@@ -49,7 +50,7 @@ const AddEditRolePermission: React.FC = () => {
   const [permissions, setPermissions] = useState<RowPermissions>({ ...defaultPermissions });
   const [initialPermissions, setInitialPermissions] = useState<RowPermissions | null>(null);
 
-  const apiBase = 'http://3.110.153.105:3000/api/v1';
+  const apiBase = config.API_BASE_URL;
 
   const fetchRoles = async () => {
     try {

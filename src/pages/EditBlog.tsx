@@ -4,6 +4,7 @@ import { CCard, CCardHeader, CCardBody, CForm, CFormLabel, CFormInput, CFormText
 import CIcon from '@coreui/icons-react';
 import { cilSave, cilArrowLeft } from '@coreui/icons';
 import { apiService } from '../services/api';
+import { config } from '../config/env';
 
 // Type casting for CoreUI components
 const CCardComponent = CCard as React.ComponentType<any>;
@@ -51,7 +52,7 @@ const EditBlog: React.FC = () => {
       if (!id) return;
 
       try {
-        const response = await apiService.authFetch(`http://3.110.153.105:3000/api/v1/blog/${id}`, {
+        const response = await apiService.authFetch(`${config.API_BASE_URL}/blog/${id}`, {
           method: 'GET'
         });
 
@@ -94,7 +95,7 @@ const EditBlog: React.FC = () => {
     setSuccess('');
 
     try {
-      const response = await apiService.authFetch(`http://3.110.153.105:3000/api/v1/blog/update/${id}`, {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/blog/update/${id}`, {
         method: 'PUT',
         body: JSON.stringify(formData)
       });

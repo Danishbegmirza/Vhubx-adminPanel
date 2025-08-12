@@ -21,6 +21,7 @@ import {
 } from '@coreui/icons';
 import CustomAlert from '../components/CustomAlert';
 import { apiService } from '../services/api';
+import { config } from '../config/env';
 
 interface Consultant {
   id: number;
@@ -41,6 +42,7 @@ interface Coupon {
 
 interface Property {
   id: number;
+  name_of_establishment: string;
   userid: number | null;
   categoryId: number;
   partnerSubmissionId: number | null;
@@ -161,7 +163,7 @@ const PropertyList = () => {
     setError(null);
     
     try {
-      let url = `http://3.110.153.105:3000/api/v1/property/list?page=${page}`;
+      let url = `${config.API_BASE_URL}/property/list?page=${page}`;
       
       // If userType !== 2, pass organization_id from localStorage
       const storedUserType = localStorage.getItem('userType');
@@ -230,7 +232,7 @@ const PropertyList = () => {
     setActionLoading(true);
     
     try {
-      const response = await apiService.authFetch(`http://3.110.153.105:3000/api/v1/property/delete/${propertyId}`, {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/property/delete/${propertyId}`, {
         method: 'DELETE'
       });
 
@@ -420,7 +422,7 @@ const PropertyList = () => {
                                   <CIcon icon={cilBuilding} className="text-muted" />
                                 </div>
                                 <div>
-                                  <h6 className="mb-1">{property.brand || 'Unnamed Property'}</h6>
+                                  <h6 className="mb-1">{property?.name_of_establishment || 'Unnamed Property'}</h6>
                                   <small className="text-muted">{property.product_types}</small>
                                 </div>
                               </div>

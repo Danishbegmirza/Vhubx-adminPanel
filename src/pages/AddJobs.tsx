@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import CIcon from '@coreui/icons-react';
 import { cilBriefcase, cilPlus, cilSave, cilX } from '@coreui/icons';
 import { apiService } from '../services/api';
+import { config } from '../config/env';
 
 interface JobFormData {
   title: string;
@@ -60,7 +61,7 @@ const AddJobs: React.FC = () => {
     setMessage(null);
 
     try {
-      const response = await apiService.authFetch('http://3.110.153.105:3000/api/v1/job/add', {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/job/add`, {
         method: 'POST',
         body: JSON.stringify(formData)
       });
