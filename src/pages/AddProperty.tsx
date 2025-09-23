@@ -27,22 +27,47 @@ import {
 } from '@coreui/icons';
 import CustomAlert from '../components/CustomAlert';
 import { config } from '../config/env';
+import { amenityService, Amenity } from '../services/amenityService';
 
 interface PropertyFormData {
+  // New fields at the top
+  property_name: string;
+  brand_chain_name: string;
+  establishment_type: string;
+  status: string;
+  listing_type: string;
+  
+  // Location fields
+  country: string;
+  state_region: string;
+  city: string;
+  locality_micro_market: string;
+  full_address: string;
+  pincode_zip_code: string;
+  nearest_metro_transport: string;
+  
+  // Property Owner/Operator Details
+  operator_company_name: string;
+  contact_person: string;
+  designation: string;
+  contact_number: string;
+  email_address: string;
+  website_booking_link: string;
+  support_contact: string;
+  
+  // Dynamic Amenities & Facilities
+  selectedAmenities: number[];
+  
+  // Existing fields
   type_of_establishment: string;
   name_of_establishment: string;
   ownership_of_property: string;
-  city: string;
   complete_address: string;
   working_days: string;
   opening_time: string;
   internet_type: string;
   num_of_seats_available_for_coworking: string;
   pictures_of_the_space: File | null;
-  first_name: string;
-  last_name: string;
-  mobile: string;
-  email: string;
   categoryId: string;
   subcategoryId: string;
   latitude: string;
@@ -73,21 +98,66 @@ interface PropertyFormData {
 
 const AddProperty = () => {
   const navigate = useNavigate();
+  const [amenities, setAmenities] = useState<Amenity[]>([]);
+  const [amenitiesLoading, setAmenitiesLoading] = useState(true);
+
+  // Fetch amenities from API
+  const fetchAmenities = async () => {
+    try {
+      setAmenitiesLoading(true);
+      const data = await amenityService.getAmenities();
+      setAmenities(data);
+    } catch (error) {
+      console.error('Error fetching amenities:', error);
+      showAlert('Error', 'Failed to load amenities', 'error');
+    } finally {
+      setAmenitiesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAmenities();
+  }, []);
+
   const [formData, setFormData] = useState<PropertyFormData>({
+    // New fields with default values
+    property_name: '',
+    brand_chain_name: '',
+    establishment_type: '',
+    status: 'Active',
+    listing_type: 'Standard',
+    
+    // Location fields
+    country: '',
+    state_region: '',
+    city: '',
+    locality_micro_market: '',
+    full_address: '',
+    pincode_zip_code: '',
+    nearest_metro_transport: '',
+    
+    // Property Owner/Operator Details
+    operator_company_name: '',
+    contact_person: '',
+    designation: '',
+    contact_number: '',
+    email_address: '',
+    website_booking_link: '',
+    support_contact: '',
+    
+    // Dynamic Amenities & Facilities
+    selectedAmenities: [],
+    
+    // Existing fields
     type_of_establishment: '',
     name_of_establishment: '',
     ownership_of_property: '',
-    city: '',
     complete_address: '',
     working_days: '',
     opening_time: '',
     internet_type: '',
     num_of_seats_available_for_coworking: '',
     pictures_of_the_space: null,
-    first_name: '',
-    last_name: '',
-    mobile: '',
-    email: '',
     categoryId: '1',
     subcategoryId: '4',
     latitude: '',
@@ -162,6 +232,15 @@ const AddProperty = () => {
     }));
   };
 
+  const handleAmenityChange = (amenityId: number, isChecked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedAmenities: isChecked
+        ? [...prev.selectedAmenities, amenityId]
+        : prev.selectedAmenities.filter(id => id !== amenityId)
+    }));
+  };
+
   const addConnectivity = () => {
     setFormData(prev => ({
       ...prev,
@@ -222,25 +301,65 @@ const AddProperty = () => {
       }
 
       const formDataToSend = new FormData();
-      const payload = { ...formData, categoryId: '1' };
       
-      // Add all form fields to FormData
-      Object.entries(payload).forEach(([key, value]) => {
-        if (key === 'pictures_of_the_space' && value instanceof File) {
-          formDataToSend.append(key, value);
-        } else if (key === 'connectivity') {
-          // Handle connectivity array
-          (value as Array<any>).forEach((item, index) => {
-            formDataToSend.append(`connectivity[]`, JSON.stringify(item));
-          });
-        } else if (typeof value === 'boolean') {
-          formDataToSend.append(key, value.toString());
-        } else {
-          formDataToSend.append(key, value as string);
-        }
+      // Map form fields to API parameters
+      formDataToSend.append('type_of_establishment', formData.establishment_type || formData.type_of_establishment);
+      formDataToSend.append('name_of_establishment', formData.name_of_establishment || formData.property_name);
+      formDataToSend.append('country', formData.country);
+      formDataToSend.append('state', formData.state_region);
+      formDataToSend.append('city', formData.city);
+      formDataToSend.append('locality', formData.locality_micro_market);
+      formDataToSend.append('pin_code', formData.pincode_zip_code);
+      formDataToSend.append('complete_address', formData.full_address || formData.complete_address);
+      formDataToSend.append('owner_company_name', formData.operator_company_name);
+      formDataToSend.append('contact_person', formData.contact_person);
+      formDataToSend.append('contact_number', formData.contact_number);
+      formDataToSend.append('designation', formData.designation);
+      formDataToSend.append('email_address', formData.email_address);
+      formDataToSend.append('support_contact', formData.support_contact);
+      formDataToSend.append('categoryId', formData.categoryId);
+      formDataToSend.append('subcategoryId', formData.subcategoryId);
+      formDataToSend.append('latitude', formData.latitude);
+      formDataToSend.append('longitude', formData.longitude);
+      formDataToSend.append('brand', formData.brand_chain_name || formData.brand);
+      formDataToSend.append('product_types', formData.product_types);
+      formDataToSend.append('parking', formData.parking.toString());
+      formDataToSend.append('metro_connectivity', formData.metro_connectivity.toString());
+      formDataToSend.append('is_popular', formData.is_popular.toString());
+
+      // Handle connectivity array
+      formData.connectivity.forEach((item) => {
+        formDataToSend.append('connectivity[]', JSON.stringify({
+          station_name: item.station_name,
+          metro_line: item.metro_line,
+          distance_in_m: item.distance_in_m
+        }));
       });
 
-      // Conditionally append organization_id for non-type-2 users
+      // Handle pictures
+      if (formData.pictures_of_the_space) {
+        formDataToSend.append('pictures_of_the_space', formData.pictures_of_the_space);
+      }
+
+      // Handle amenities - convert selectedAmenities array to the expected format
+      formData.selectedAmenities.forEach((amenityId) => {
+        formDataToSend.append('amenities[]', JSON.stringify({
+          amenity_id: amenityId,
+          is_included: true
+        }));
+      });
+
+      // Add unselected amenities as false (if needed by API)
+      const allAmenityIds = amenities.map(a => a.id);
+      const unselectedAmenities = allAmenityIds.filter(id => !formData.selectedAmenities.includes(id));
+      unselectedAmenities.forEach((amenityId) => {
+        formDataToSend.append('amenities[]', JSON.stringify({
+          amenity_id: amenityId,
+          is_included: false
+        }));
+      });
+
+      // Conditionally append organization_id for non-type-4 users
       try {
         const storedUserType = localStorage.getItem('userType');
         const userTypeValue = storedUserType ? parseInt(storedUserType) : null;
@@ -249,7 +368,7 @@ const AddProperty = () => {
           const userData = userDataRaw ? JSON.parse(userDataRaw) : {};
           const organizationId = userData.organizationId ?? userData.organization_id ?? null;
           if (organizationId) {
-            formDataToSend.append('organization_id', String(organizationId));
+            formDataToSend.append('orgnization_id', String(organizationId)); // Note: API uses 'orgnization_id' (typo in API)
           }
         }
       } catch (e) {
@@ -309,281 +428,553 @@ const AddProperty = () => {
         <div className="card">
           <div className="card-body">
             <form onSubmit={handleSubmit}>
-              <div className="row">
-                {/* Basic Information */}
-                <div className="col-md-6">
+              {/* New Property Overview Section */}
+              <div className="row mb-4">
+                <div className="col-12">
                   <h5 className="mb-3">
-                    <CIcon icon={cilBuilding} className="me-2" />
-                    Basic Information
+                    <CIcon icon={cilStar} className="me-2" />
+                    Property Overview
                   </h5>
-                  
+                </div>
+                
+                <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Type of Establishment *</label>
-                    <select
-                      className="form-select"
-                      name="type_of_establishment"
-                      value={formData.type_of_establishment}
-                      onChange={handleInputChange}
-                      required
-                    >
-                      <option value="">Select Establishment Type</option>
-                      {establishmentTypes.map(type => (
-                        <option key={type.id} value={type.establishment_type}>{type.establishment_type}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Category *</label>
-                    <select
-                      className="form-select"
-                      name="categoryId"
-                      value={formData.categoryId}
-                      onChange={handleInputChange}
-                      required
-                    >
-                      <option value="1">Managed office</option>
-                      <option value="2">Coworking Space</option>
-                      <option value="3">Meeting room</option>
-                      <option value="4">Virtual office</option>
-                      <option value="5">Day pass</option>
-                    </select>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Name of Establishment *</label>
+                    <label className="form-label">Property Name *</label>
                     <input
                       type="text"
                       className="form-control"
-                      name="name_of_establishment"
-                      value={formData.name_of_establishment}
+                      name="property_name"
+                      value={formData.property_name}
                       onChange={handleInputChange}
+                      placeholder="Enter property name"
                       required
                     />
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Ownership of Property *</label>
+                    <label className="form-label">Brand/Chain Name</label>
                     <select
                       className="form-select"
-                      name="ownership_of_property"
-                      value={formData.ownership_of_property}
+                      name="brand_chain_name"
+                      value={formData.brand_chain_name}
+                      onChange={handleInputChange}
+                    >
+                      <option value="">Select Brand/Chain</option>
+                      <option value="WeWork">WeWork</option>
+                      <option value="Regus">Regus</option>
+                      <option value="Awfis">Awfis</option>
+                      <option value="91springboard">91springboard</option>
+                      <option value="Innov8">Innov8</option>
+                      <option value="IndiQube">IndiQube</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Status *</label>
+                    <select
+                      className="form-select"
+                      name="status"
+                      value={formData.status}
                       onChange={handleInputChange}
                       required
                     >
-                      <option value="">Select Ownership</option>
-                      <option value="Owned">Owned</option>
-                      <option value="Leased">Leased</option>
-                      <option value="Rented">Rented</option>
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                      <option value="Coming Soon">Coming Soon</option>
+                    </select>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Listing Type *</label>
+                    <select
+                      className="form-select"
+                      name="listing_type"
+                      value={formData.listing_type}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="Standard">Standard</option>
+                      <option value="Featured">Featured</option>
+                      <option value="Partner Listing">Partner Listing</option>
+                    </select>
+                  </div>
+
+                  
+                </div>
+              </div>
+
+              <hr />
+
+              {/* Location Details */}
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h5 className="mb-3">
+                    <CIcon icon={cilLocationPin} className="me-2" />
+                    Location Details
+                  </h5>
+                </div>
+                
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Country *</label>
+                    <select
+                      className="form-select"
+                      name="country"
+                      value={formData.country}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="">Select Country</option>
+                      <option value="India">India</option>
+                      <option value="United States">United States</option>
+                      <option value="United Kingdom">United Kingdom</option>
+                      <option value="Canada">Canada</option>
+                      <option value="Australia">Australia</option>
+                      <option value="Singapore">Singapore</option>
+                      <option value="UAE">UAE</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">State/Region *</label>
+                    <select
+                      className="form-select"
+                      name="state_region"
+                      value={formData.state_region}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="">Select State/Region</option>
+                      <option value="Delhi">Delhi</option>
+                      <option value="Mumbai">Mumbai</option>
+                      <option value="Bangalore">Bangalore</option>
+                      <option value="Chennai">Chennai</option>
+                      <option value="Kolkata">Kolkata</option>
+                      <option value="Hyderabad">Hyderabad</option>
+                      <option value="Pune">Pune</option>
+                      <option value="Gurgaon">Gurgaon</option>
+                      <option value="Noida">Noida</option>
+                      <option value="Other">Other</option>
                     </select>
                   </div>
 
                   <div className="mb-3">
                     <label className="form-label">City *</label>
-                    <input
-                      type="text"
-                      className="form-control"
+                    <select
+                      className="form-select"
                       name="city"
                       value={formData.city}
                       onChange={handleInputChange}
                       required
-                    />
+                    >
+                      <option value="">Select City</option>
+                      <option value="New Delhi">New Delhi</option>
+                      <option value="Mumbai">Mumbai</option>
+                      <option value="Bangalore">Bangalore</option>
+                      <option value="Chennai">Chennai</option>
+                      <option value="Kolkata">Kolkata</option>
+                      <option value="Hyderabad">Hyderabad</option>
+                      <option value="Pune">Pune</option>
+                      <option value="Gurgaon">Gurgaon</option>
+                      <option value="Noida">Noida</option>
+                      <option value="Other">Other</option>
+                    </select>
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Complete Address *</label>
-                    <textarea
+                    <label className="form-label">Locality / Micro-market *</label>
+                    <input
+                      type="text"
                       className="form-control"
-                      name="complete_address"
-                      value={formData.complete_address}
+                      name="locality_micro_market"
+                      value={formData.locality_micro_market}
                       onChange={handleInputChange}
-                      rows={3}
+                      placeholder="e.g., Connaught Place, Bandra Kurla Complex"
                       required
                     />
                   </div>
                 </div>
 
-                {/* Working Details */}
                 <div className="col-md-6">
-                  <h5 className="mb-3">
-                    <CIcon icon={cilClock} className="me-2" />
-                    Working Details
-                  </h5>
-                  
                   <div className="mb-3">
-                    <label className="form-label">Working Days *</label>
+                    <label className="form-label">Full Address *</label>
+                    <textarea
+                      className="form-control"
+                      name="full_address"
+                      value={formData.full_address}
+                      onChange={handleInputChange}
+                      rows={4}
+                      placeholder="Enter complete address with building name, floor, etc."
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Pincode/Zip Code *</label>
                     <input
                       type="text"
                       className="form-control"
-                      name="working_days"
-                      value={formData.working_days}
+                      name="pincode_zip_code"
+                      value={formData.pincode_zip_code}
                       onChange={handleInputChange}
-                      placeholder="e.g., 6 days in a week"
+                      placeholder="e.g., 110001"
                       required
                     />
                   </div>
+                </div>
+              </div>
 
-                  <div className="mb-3">
-                    <label className="form-label">Opening Time *</label>
-                    <input
-                      type="time"
-                      className="form-control"
-                      name="opening_time"
-                      value={formData.opening_time}
-                      onChange={handleInputChange}
-                      required
-                    />
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h6 className="mb-3">
+                    <CIcon icon={cilMap} className="me-2" />
+                    Google Map Coordinates
+                  </h6>
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="mb-3">
+                        <label className="form-label">Latitude *</label>
+                        <input
+                          type="number"
+                          step="any"
+                          className="form-control"
+                          name="latitude"
+                          value={formData.latitude}
+                          onChange={handleInputChange}
+                          placeholder="e.g., 28.6139"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="mb-3">
+                        <label className="form-label">Longitude *</label>
+                        <input
+                          type="number"
+                          step="any"
+                          className="form-control"
+                          name="longitude"
+                          value={formData.longitude}
+                          onChange={handleInputChange}
+                          placeholder="e.g., 77.2090"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="alert alert-info">
+                    <small>
+                      <CIcon icon={cilMap} className="me-1" />
+                      You can get coordinates from Google Maps by right-clicking on the location and selecting "What's here?"
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h6 className="mb-3">
+                    <CIcon icon={cilLocationPin} className="me-2" />
+                    Metro Connectivity Details
+                  </h6>
+                  
+                  {formData.connectivity.map((item, index) => (
+                    <div key={index} className="row mb-3 border rounded p-3">
+                      <div className="col-md-4">
+                        <label className="form-label">Station Name</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={item.station_name}
+                          onChange={(e) => updateConnectivity(index, 'station_name', e.target.value)}
+                        />
+                      </div>
+                      <div className="col-md-4">
+                        <label className="form-label">Metro Line</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={item.metro_line}
+                          onChange={(e) => updateConnectivity(index, 'metro_line', e.target.value)}
+                        />
+                      </div>
+                      <div className="col-md-3">
+                        <label className="form-label">Distance (m)</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={item.distance_in_m}
+                          onChange={(e) => updateConnectivity(index, 'distance_in_m', parseInt(e.target.value))}
+                        />
+                      </div>
+                      <div className="col-md-1 d-flex align-items-end">
+                        <button
+                          type="button"
+                          className="btn btn-danger"
+                          onClick={() => removeConnectivity(index)}
+                        >
+                          <CIcon icon={cilX} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    onClick={addConnectivity}
+                  >
+                    <CIcon icon={cilPlus} className="me-2" />
+                    Add Metro Station
+                  </button>
+                </div>
+              </div>
+
+              <hr />
+
+              {/* Space Information */}
+              <div className="row">
+                <div className="col-12">
+                  <h5 className="mb-3">
+                    <CIcon icon={cilBuilding} className="me-2" />
+                    Space Information
+                  </h5>
+                </div>
+                
+                <div className="col-md-8">
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="mb-3">
+                        <label className="form-label">Name of Establishment *</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          name="name_of_establishment"
+                          value={formData.name_of_establishment}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                      
+                      <div className="mb-3">
+                        <label className="form-label">Type of Establishment *</label>
+                        <select
+                          className="form-select"
+                          name="type_of_establishment"
+                          value={formData.type_of_establishment}
+                          onChange={handleInputChange}
+                          required
+                        >
+                          <option value="">Select Establishment Type</option>
+                          {establishmentTypes.map(type => (
+                            <option key={type.id} value={type.establishment_type}>{type.establishment_type}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label">Category *</label>
+                        <select
+                          className="form-select"
+                          name="categoryId"
+                          value={formData.categoryId}
+                          onChange={handleInputChange}
+                          required
+                        >
+                          <option value="1">Managed office</option>
+                          <option value="2">Coworking Space</option>
+                          <option value="3">Meeting room</option>
+                          <option value="4">Virtual office</option>
+                          <option value="5">Day pass</option>
+                        </select>
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label">Ownership of Property *</label>
+                        <select
+                          className="form-select"
+                          name="ownership_of_property"
+                          value={formData.ownership_of_property}
+                          onChange={handleInputChange}
+                          required
+                        >
+                          <option value="">Select Ownership</option>
+                          <option value="Owned">Owned</option>
+                          <option value="Leased">Leased</option>
+                          <option value="Rented">Rented</option>
+                        </select>
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label">Working Days *</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          name="working_days"
+                          value={formData.working_days}
+                          onChange={handleInputChange}
+                          placeholder="e.g., 6 days in a week"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-md-6">
+                      <div className="mb-3">
+                        <label className="form-label">Opening Time *</label>
+                        <input
+                          type="time"
+                          className="form-control"
+                          name="opening_time"
+                          value={formData.opening_time}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label">Internet Type *</label>
+                        <select
+                          className="form-select"
+                          name="internet_type"
+                          value={formData.internet_type}
+                          onChange={handleInputChange}
+                          required
+                        >
+                          <option value="">Select Internet Type</option>
+                          <option value="Fiber Optic">Fiber Optic</option>
+                          <option value="Broadband">Broadband</option>
+                          <option value="WiFi">WiFi</option>
+                        </select>
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label">Number of Seats Available *</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          name="num_of_seats_available_for_coworking"
+                          value={formData.num_of_seats_available_for_coworking}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label">Area in Sq Ft *</label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          name="area_in_sqft"
+                          value={formData.area_in_sqft}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label">Pictures of the Space</label>
+                        <input
+                          type="file"
+                          className="form-control"
+                          name="pictures_of_the_space"
+                          onChange={handleFileChange}
+                          accept="image/*"
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="form-label">Product Types</label>
+                        <select
+                          className="form-select"
+                          name="product_types"
+                          value={formData.product_types}
+                          onChange={handleInputChange}
+                        >
+                          <option value="">Select Product Type</option>
+                          <option value="Coworking Space">Coworking Space</option>
+                          <option value="Meeting Room">Meeting Room</option>
+                          <option value="Private Office">Private Office</option>
+                          <option value="Virtual Office">Virtual Office</option>
+                          <option value="Day Pass">Day Pass</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="mb-3">
-                    <label className="form-label">Internet Type *</label>
-                    <select
-                      className="form-select"
-                      name="internet_type"
-                      value={formData.internet_type}
-                      onChange={handleInputChange}
-                      required
-                    >
-                      <option value="">Select Internet Type</option>
-                      <option value="Fiber Optic">Fiber Optic</option>
-                      <option value="Broadband">Broadband</option>
-                      <option value="WiFi">WiFi</option>
-                    </select>
-                  </div>
+                  <div className="row mt-3">
+                    <div className="col-12">
+                      <h6 className="mb-3">
+                        <CIcon icon={cilStar} className="me-2" />
+                        Additional Features
+                      </h6>
+                    </div>
+                    
+                    <div className="col-md-4">
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          name="parking"
+                          checked={formData.parking}
+                          onChange={handleInputChange}
+                        />
+                        <label className="form-check-label">
+                          Parking Available
+                        </label>
+                      </div>
+                    </div>
 
-                  <div className="mb-3">
-                    <label className="form-label">Number of Seats Available *</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      name="num_of_seats_available_for_coworking"
-                      value={formData.num_of_seats_available_for_coworking}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
+                    <div className="col-md-4">
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          name="metro_connectivity"
+                          checked={formData.metro_connectivity}
+                          onChange={handleInputChange}
+                        />
+                        <label className="form-check-label">
+                          Metro Connectivity
+                        </label>
+                      </div>
+                    </div>
 
-                  <div className="mb-3">
-                    <label className="form-label">Pictures of the Space</label>
-                    <input
-                      type="file"
-                      className="form-control"
-                      name="pictures_of_the_space"
-                      onChange={handleFileChange}
-                      accept="image/*"
-                    />
+                    <div className="col-md-4">
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          name="is_popular"
+                          checked={formData.is_popular}
+                          onChange={handleInputChange}
+                        />
+                        <label className="form-check-label">
+                          Popular Property
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
               <hr />
 
-              {/* Contact Information */}
+
+              {/* Property Details
               <div className="row">
-                <div className="col-md-6">
-                  <h5 className="mb-3">
-                    <CIcon icon={cilUser} className="me-2" />
-                    Contact Information
-                  </h5>
-                  
-                  <div className="row">
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">First Name *</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="first_name"
-                        value={formData.first_name}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Last Name *</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="last_name"
-                        value={formData.last_name}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Mobile *</label>
-                    <input
-                      type="tel"
-                      className="form-control"
-                      name="mobile"
-                      value={formData.mobile}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Email *</label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Property Details */}
                 <div className="col-md-6">
                   <h5 className="mb-3">
                     <CIcon icon={cilHome} className="me-2" />
                     Property Details
                   </h5>
                   
-                  {/* <div className="row">
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Subcategory ID *</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        name="subcategoryId"
-                        value={formData.subcategoryId}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                  </div> */}
-
-                  <div className="row">
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Latitude *</label>
-                      <input
-                        type="number"
-                        step="any"
-                        className="form-control"
-                        name="latitude"
-                        value={formData.latitude}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Longitude *</label>
-                      <input
-                        type="number"
-                        step="any"
-                        className="form-control"
-                        name="longitude"
-                        value={formData.longitude}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
                   <div className="mb-3">
                     <label className="form-label">Area in Sq Ft *</label>
                     <input
@@ -596,12 +987,197 @@ const AddProperty = () => {
                     />
                   </div>
                 </div>
+              </div> */}
+
+              {/* <hr /> */}
+
+              {/* Dynamic Amenities & Facilities */}
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h5 className="mb-3">
+                    <CIcon icon={cilSettings} className="me-2" />
+                    Amenities & Facilities
+                  </h5>
+                  <p className="text-muted mb-4">Select all amenities and facilities available at this property</p>
+                </div>
+
+                {amenitiesLoading ? (
+                  <div className="col-12 text-center py-4">
+                    <div className="spinner-border" role="status">
+                      <span className="visually-hidden">Loading amenities...</span>
+                    </div>
+                    <p className="mt-2 text-muted">Loading amenities...</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Group amenities by category */}
+                    {['Workspace Amenities', 'Facilities', 'Access & Convenience', 'Community/Value Add'].map((category) => {
+                      const categoryAmenities = amenities.filter(amenity => amenity.category === category);
+                      
+                      if (categoryAmenities.length === 0) return null;
+
+                      const getCategoryIcon = (cat: string) => {
+                        switch (cat) {
+                          case 'Workspace Amenities': return cilBuilding;
+                          case 'Facilities': return cilSettings;
+                          case 'Access & Convenience': return cilLocationPin;
+                          case 'Community/Value Add': return cilPeople;
+                          default: return cilSettings;
+                        }
+                      };
+
+                      return (
+                        <div key={category} className="col-md-6 mb-4">
+                          <h6 className="mb-3 text-primary">
+                            <CIcon icon={getCategoryIcon(category)} className="me-2" />
+                            {category}
+                          </h6>
+                          
+                          <div className="row">
+                            {categoryAmenities.map((amenity, index) => (
+                              <div key={amenity.id} className="col-md-6 mb-3">
+                                <div className="form-check">
+                                  <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    id={`amenity-${amenity.id}`}
+                                    checked={formData.selectedAmenities.includes(amenity.id)}
+                                    onChange={(e) => {
+                                      const isChecked = e.target.checked;
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        selectedAmenities: isChecked
+                                          ? [...prev.selectedAmenities, amenity.id]
+                                          : prev.selectedAmenities.filter(id => id !== amenity.id)
+                                      }));
+                                    }}
+                                  />
+                                  <label className="form-check-label" htmlFor={`amenity-${amenity.id}`}>
+                                    {amenity.label}
+                                  </label>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+
+              <hr />
+
+               {/* Property Owner / Operator Details */}
+               <div className="row">
+                <div className="col-md-6">
+                  <h5 className="mb-3">
+                    <CIcon icon={cilUser} className="me-2" />
+                    Property Owner / Operator Details
+                  </h5>
+                  
+                  <div className="mb-3">
+                    <label className="form-label">Operator/Owner Company Name *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="operator_company_name"
+                      value={formData.operator_company_name}
+                      onChange={handleInputChange}
+                      placeholder="Enter company name"
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Contact Person (Onsite Manager) *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="contact_person"
+                      value={formData.contact_person}
+                      onChange={handleInputChange}
+                      placeholder="Enter contact person name"
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Designation *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="designation"
+                      value={formData.designation}
+                      onChange={handleInputChange}
+                      placeholder="e.g., Property Manager, Operations Head"
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Contact Number *</label>
+                    <input
+                      type="tel"
+                      className="form-control"
+                      name="contact_number"
+                      value={formData.contact_number}
+                      onChange={handleInputChange}
+                      placeholder="Enter phone number"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <h5 className="mb-3">
+                    <CIcon icon={cilEnvelopeOpen} className="me-2" />
+                    Contact & Support Information
+                  </h5>
+                  
+                  <div className="mb-3">
+                    <label className="form-label">Email Address *</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      name="email_address"
+                      value={formData.email_address}
+                      onChange={handleInputChange}
+                      placeholder="Enter email address"
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Website / Booking Link</label>
+                    <input
+                      type="url"
+                      className="form-control"
+                      name="website_booking_link"
+                      value={formData.website_booking_link}
+                      onChange={handleInputChange}
+                      placeholder="https://example.com or booking link"
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Support Contact (24/7 Helpline)</label>
+                    <input
+                      type="tel"
+                      className="form-control"
+                      name="support_contact"
+                      value={formData.support_contact}
+                      onChange={handleInputChange}
+                      placeholder="24/7 helpline number (optional)"
+                    />
+                  </div>
+                </div>
               </div>
 
               <hr />
 
               {/* Additional Details */}
-              <div className="row">
+              {/* <div className="row">
                 <div className="col-md-6">
                   <h5 className="mb-3">
                     <CIcon icon={cilSettings} className="me-2" />
@@ -741,12 +1317,12 @@ const AddProperty = () => {
                     />
                   </div>
                 </div>
-              </div>
+              </div> */}
 
-              <hr />
+              {/* <hr /> */}
 
               {/* Building Information */}
-              <div className="row">
+              {/* <div className="row">
                 <div className="col-md-6">
                   <h5 className="mb-3">
                     <CIcon icon={cilBuilding} className="me-2" />
@@ -824,7 +1400,7 @@ const AddProperty = () => {
                         onChange={handleInputChange}
                       />
                       <label className="form-check-label">
-                        Metro Connectivity
+                      Nearest Metro/Transport Access
                       </label>
                     </div>
                   </div>
@@ -844,71 +1420,9 @@ const AddProperty = () => {
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
-              <hr />
-
-              {/* Metro Connectivity Details */}
-              <div className="row">
-                <div className="col-12">
-                  <h5 className="mb-3">
-                    <CIcon icon={cilLocationPin} className="me-2" />
-                    Metro Connectivity Details
-                  </h5>
-                  
-                  {formData.connectivity.map((item, index) => (
-                    <div key={index} className="row mb-3 border rounded p-3">
-                      <div className="col-md-4">
-                        <label className="form-label">Station Name</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={item.station_name}
-                          onChange={(e) => updateConnectivity(index, 'station_name', e.target.value)}
-                        />
-                      </div>
-                      <div className="col-md-4">
-                        <label className="form-label">Metro Line</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={item.metro_line}
-                          onChange={(e) => updateConnectivity(index, 'metro_line', e.target.value)}
-                        />
-                      </div>
-                      <div className="col-md-3">
-                        <label className="form-label">Distance (m)</label>
-                        <input
-                          type="number"
-                          className="form-control"
-                          value={item.distance_in_m}
-                          onChange={(e) => updateConnectivity(index, 'distance_in_m', parseInt(e.target.value))}
-                        />
-                      </div>
-                      <div className="col-md-1 d-flex align-items-end">
-                        <button
-                          type="button"
-                          className="btn btn-danger"
-                          onClick={() => removeConnectivity(index)}
-                        >
-                          <CIcon icon={cilX} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  <button
-                    type="button"
-                    className="btn btn-outline-primary"
-                    onClick={addConnectivity}
-                  >
-                    <CIcon icon={cilPlus} className="me-2" />
-                    Add Metro Station
-                  </button>
-                </div>
-              </div>
-
-              <hr />
+              {/* <hr /> */}
 
               {/* Submit Button */}
               <div className="d-flex justify-content-end gap-3">

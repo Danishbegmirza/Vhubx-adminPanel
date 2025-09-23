@@ -55,6 +55,9 @@ export const permissionsService = {
 
   // Get all available navigation items based on permissions
   getNavigationItems(permissions: ModulePermission[]): NavItem[] {
+    // Get current user type from localStorage
+    const userType = parseInt(localStorage.getItem('userType') || '0');
+    
     const allNavItems: NavItem[] = [
       {
         title: 'Dashboard',
@@ -249,6 +252,26 @@ export const permissionsService = {
         ]
       },
       {
+        title: 'Amenities & Facilities',
+        path: '/amenities',
+        icon: 'cilSettings',
+        moduleName: 'Amenities Management',
+        children: [
+          {
+            title: 'Add Amenity',
+            path: '/amenities/add',
+            icon: 'cilPlus',
+            moduleName: 'Amenities Management'
+          },
+          {
+            title: 'List Amenities',
+            path: '/amenities/list',
+            icon: 'cilList',
+            moduleName: 'Amenities Management'
+          }
+        ]
+      },
+      {
         title: 'Payments',
         path: '/payments',
         icon: 'cilCreditCard',
@@ -273,6 +296,11 @@ export const permissionsService = {
     const otherNavItems = allNavItems.slice(1); // All items except Dashboard
     
     const filteredNavItems = otherNavItems.filter(navItem => {
+      // Special handling for userType 4 (admin) - show Amenities Management even if permissions aren't set
+      if (userType === 4 && navItem.moduleName === 'Amenities Management') {
+        return true;
+      }
+      
       // Check if user has view permission for this module
       const hasViewPermission = this.hasPermission(permissions, navItem.moduleName, 'view');
       
@@ -283,6 +311,10 @@ export const permissionsService = {
       // If item has children, filter them too
       if (navItem.children) {
         navItem.children = navItem.children.filter(child => {
+          // Special handling for userType 4 (admin) - show Amenities Management children
+          if (userType === 4 && child.moduleName === 'Amenities Management') {
+            return true;
+          }
           return this.hasPermission(permissions, child.moduleName, 'view');
         });
         
