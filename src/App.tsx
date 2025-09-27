@@ -49,6 +49,7 @@ import EstablishmentList from './pages/EstablishmentList';
 import AddEstablishment from './pages/AddEstablishment';
 import EditEstablishment from './pages/EditEstablishment';
 import SpaceTypeList from './pages/SpaceTypeList';
+import SubTypeList from './pages/SubTypeList';
 import AddAmenityMaster from './pages/AddAmenityMaster';
 import ListAmenitiesMaster from './pages/ListAmenitiesMaster';
 
@@ -242,6 +243,7 @@ const AppContent: React.FC = () => {
         <Route path="/establishment/add" element={finalIsAuthenticated ? <AuthenticatedLayout><AddEstablishment /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
         <Route path="/establishment/edit/:id" element={finalIsAuthenticated ? <AuthenticatedLayout><EditEstablishment /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
         <Route path="/space-types/list" element={finalIsAuthenticated ? <AuthenticatedLayout><SpaceTypeList /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
+        <Route path="/sub-types/list" element={finalIsAuthenticated ? <AuthenticatedLayout><SubTypeList /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
         
         {/* Amenities Routes */}
         <Route path="/amenities/add" element={finalIsAuthenticated ? <AuthenticatedLayout><AddAmenityMaster /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
