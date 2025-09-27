@@ -103,8 +103,7 @@ const SpaceTypeList: React.FC = () => {
     setEditingSpaceType(spaceType);
     setFormData({
       name: spaceType.name,
-      description: spaceType.description,
-      parentId: spaceType.parentId
+      description: spaceType.description
     });
     setShowModal(true);
   };
@@ -169,14 +168,13 @@ const SpaceTypeList: React.FC = () => {
                     <CTableHeaderCellComponent>ID</CTableHeaderCellComponent>
                     <CTableHeaderCellComponent>Name</CTableHeaderCellComponent>
                     <CTableHeaderCellComponent>Description</CTableHeaderCellComponent>
-                    <CTableHeaderCellComponent>Parent ID</CTableHeaderCellComponent>
                     <CTableHeaderCellComponent>Actions</CTableHeaderCellComponent>
                   </CTableRowComponent>
                 </CTableHeadComponent>
                 <CTableBodyComponent>
                   {spaceTypes.length === 0 ? (
                     <CTableRowComponent>
-                      <CTableDataCellComponent colSpan={5} className="text-center">
+                      <CTableDataCellComponent colSpan={4} className="text-center">
                         No space types found
                       </CTableDataCellComponent>
                     </CTableRowComponent>
@@ -188,13 +186,6 @@ const SpaceTypeList: React.FC = () => {
                           <strong>{spaceType.name}</strong>
                         </CTableDataCellComponent>
                         <CTableDataCellComponent>{spaceType.description}</CTableDataCellComponent>
-                        <CTableDataCellComponent>
-                          {spaceType.parentId ? (
-                            <CBadgeComponent color="info">{spaceType.parentId}</CBadgeComponent>
-                          ) : (
-                            <CBadgeComponent color="secondary">None</CBadgeComponent>
-                          )}
-                        </CTableDataCellComponent>
                         <CTableDataCellComponent>
                           <div className="d-flex gap-2">
                             {canEdit && (
@@ -248,7 +239,7 @@ const SpaceTypeList: React.FC = () => {
         <CModalBodyComponent>
           <CFormComponent onSubmit={handleSubmit}>
             <CRowComponent>
-              <CColComponent md={6}>
+              <CColComponent md={12}>
                 <CFormLabelComponent htmlFor="name">Name *</CFormLabelComponent>
                 <CFormInputComponent
                   id="name"
@@ -256,19 +247,6 @@ const SpaceTypeList: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Enter space type name"
                   required
-                />
-              </CColComponent>
-              <CColComponent md={6}>
-                <CFormLabelComponent htmlFor="parentId">Parent ID (Optional)</CFormLabelComponent>
-                <CFormInputComponent
-                  id="parentId"
-                  type="number"
-                  value={formData.parentId || ''}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    parentId: e.target.value ? parseInt(e.target.value) : undefined 
-                  })}
-                  placeholder="Enter parent ID"
                 />
               </CColComponent>
             </CRowComponent>

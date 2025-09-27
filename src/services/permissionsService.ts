@@ -188,6 +188,12 @@ export const permissionsService = {
             path: '/space-types/list',
             icon: 'cilList',
             moduleName: 'Property Management'
+          },
+          {
+            title: 'Sub Types List',
+            path: '/sub-types/list',
+            icon: 'cilLayers',
+            moduleName: 'Property Management'
           }
         ]
       },
