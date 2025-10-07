@@ -71,6 +71,96 @@ interface PropertyFormData {
   website_booking_link: string;
   support_contact: string;
   
+  // Furnishing Types (Optional)
+  furnishing_types: string[];
+  
+  // Space & Layout Details (Optional)
+  space_layout_details: {
+    total_built_up_area_sqft: string;
+    carpet_area_sqft: string;
+    super_built_up_area_sqft: string;
+    available_space_area_sqft: string;
+    building_floors: string;
+    available_unit_floor: string;
+    floor_plate_size_sqft: string;
+    seating_capacity: string;
+    distribution: {
+      cabins: string;
+      conference_rooms: string;
+      workstations: string;
+    };
+    floor_to_ceiling_height_ft: string;
+    washrooms: {
+      male: string;
+      female: string;
+      unisex: string;
+    };
+    availability_date: string;
+  };
+  
+  // Building & Project Details (Optional)
+  building_project_details: {
+    building_name: string;
+    developer_owner: string;
+    building_age: string;
+    building_type: string;
+    total_floors: string;
+    basement_available: string;
+    power_load_total_kva: string;
+    power_per_sqft: string;
+    car_parking_ratio: string;
+    nbc_compliance: string;
+    sez_status: string;
+  };
+  
+  // Health, Safety & Wellness (Optional)
+  health_safety: {
+    emergency_exits_signages: string;
+    indoor_air_quality: string;
+    natural_ventilation: string;
+    first_aid_wellness_room: string;
+    covid_compliant: string;
+    fire_exits_assembly: string;
+    ergonomic_seating: string;
+    accessibility_disabled: string;
+  };
+  
+  // Sustainability & Utilities (Optional)
+  sustainability: {
+    water_supply_source: string;
+    stp_available: string;
+    rainwater_harvesting: string;
+    renewable_energy: string;
+    energy_efficient_equipment: string;
+    waste_segregation: string;
+    ev_charging_stations: string;
+  };
+  
+  // Statutory & Regulatory Compliance (Optional)
+  compliance_documents: {
+    occupancy_certificate: File | null;
+    fire_noc: File | null;
+    pollution_control_noc: File | null;
+    environmental_clearance: File | null;
+    zoning_clearance: File | null;
+    lift_safety_certificate: File | null;
+    dg_set_approval: File | null;
+    building_completion_certificate: File | null;
+    structural_stability_certificate: File | null;
+    sez_notification: File | null;
+    disaster_management_plan: File | null;
+  };
+  
+  // Certifications & Ratings (Optional)
+  certifications: {
+    leed_igbc: string;
+    well_building: string;
+    smart_building: string;
+    iso_certifications: string[];
+    nbc_compliance: string;
+    other_certification: string;
+  };
+  
   // Dynamic Amenities & Facilities
   selectedAmenities: number[];
   
@@ -389,6 +479,96 @@ const AddProperty = () => {
     website_booking_link: '',
     support_contact: '',
     
+    // Furnishing Types (Optional)
+    furnishing_types: [],
+    
+    // Space & Layout Details (Optional)
+    space_layout_details: {
+      total_built_up_area_sqft: '',
+      carpet_area_sqft: '',
+      super_built_up_area_sqft: '',
+      available_space_area_sqft: '',
+      building_floors: '',
+      available_unit_floor: '',
+      floor_plate_size_sqft: '',
+      seating_capacity: '',
+      distribution: {
+        cabins: '',
+        conference_rooms: '',
+        workstations: '',
+      },
+      floor_to_ceiling_height_ft: '',
+      washrooms: {
+        male: '',
+        female: '',
+        unisex: '',
+      },
+      availability_date: '',
+    },
+    
+    // Building & Project Details (Optional)
+    building_project_details: {
+      building_name: '',
+      developer_owner: '',
+      building_age: '',
+      building_type: '',
+      total_floors: '',
+      basement_available: '',
+      power_load_total_kva: '',
+      power_per_sqft: '',
+      car_parking_ratio: '',
+      nbc_compliance: '',
+      sez_status: '',
+    },
+    
+    // Health, Safety & Wellness (Optional)
+    health_safety: {
+      emergency_exits_signages: '',
+      indoor_air_quality: '',
+      natural_ventilation: '',
+      first_aid_wellness_room: '',
+      covid_compliant: '',
+      fire_exits_assembly: '',
+      ergonomic_seating: '',
+      accessibility_disabled: '',
+    },
+    
+    // Sustainability & Utilities (Optional)
+    sustainability: {
+      water_supply_source: '',
+      stp_available: '',
+      rainwater_harvesting: '',
+      renewable_energy: '',
+      energy_efficient_equipment: '',
+      waste_segregation: '',
+      ev_charging_stations: '',
+    },
+    
+    // Statutory & Regulatory Compliance (Optional)
+    compliance_documents: {
+      occupancy_certificate: null,
+      fire_noc: null,
+      pollution_control_noc: null,
+      environmental_clearance: null,
+      zoning_clearance: null,
+      lift_safety_certificate: null,
+      dg_set_approval: null,
+      building_completion_certificate: null,
+      structural_stability_certificate: null,
+      sez_notification: null,
+      disaster_management_plan: null,
+    },
+    
+    // Certifications & Ratings (Optional)
+    certifications: {
+      leed_igbc: '',
+      well_building: '',
+      smart_building: '',
+      iso_certifications: [],
+      nbc_compliance: '',
+      other_certification: '',
+    },
+    
     // Dynamic Amenities & Facilities
     selectedAmenities: [],
     
@@ -602,6 +782,104 @@ const AddProperty = () => {
     setFormData(prev => ({
       ...prev,
       pictures_of_the_space: file
+    }));
+  };
+
+  const handleFurnishingTypeChange = (furnishingType: string, isChecked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      furnishing_types: isChecked
+        ? [...prev.furnishing_types, furnishingType]
+        : prev.furnishing_types.filter(type => type !== furnishingType)
+    }));
+  };
+
+  const handleSpaceLayoutChange = (field: string, value: string, nestedField?: string) => {
+    setFormData(prev => {
+      if (nestedField) {
+        const nestedObj = prev.space_layout_details[field as keyof typeof prev.space_layout_details];
+        if (typeof nestedObj === 'object' && nestedObj !== null) {
+          return {
+            ...prev,
+            space_layout_details: {
+              ...prev.space_layout_details,
+              [field]: {
+                ...(nestedObj as Record<string, string>),
+                [nestedField]: value
+              }
+            }
+          };
+        }
+      }
+      return {
+        ...prev,
+        space_layout_details: {
+          ...prev.space_layout_details,
+          [field]: value
+        }
+      };
+    });
+  };
+
+  const handleBuildingProjectChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      building_project_details: {
+        ...prev.building_project_details,
+        [field]: value
+      }
+    }));
+  };
+
+  const handleHealthSafetyChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      health_safety: {
+        ...prev.health_safety,
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSustainabilityChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      sustainability: {
+        ...prev.sustainability,
+        [field]: value
+      }
+    }));
+  };
+
+  const handleComplianceDocumentChange = (documentType: string, file: File | null) => {
+    setFormData(prev => ({
+      ...prev,
+      compliance_documents: {
+        ...prev.compliance_documents,
+        [documentType]: file
+      }
+    }));
+  };
+
+  const handleCertificationChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      certifications: {
+        ...prev.certifications,
+        [field]: value
+      }
+    }));
+  };
+
+  const handleISOCertificationChange = (value: string, isChecked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      certifications: {
+        ...prev.certifications,
+        iso_certifications: isChecked
+          ? [...prev.certifications.iso_certifications, value]
+          : prev.certifications.iso_certifications.filter(cert => cert !== value)
+      }
     }));
   };
 
@@ -899,13 +1177,7 @@ const AddProperty = () => {
       formDataToSend.append('latitude', formData.latitude);
       formDataToSend.append('longitude', formData.longitude);
       formDataToSend.append('brand', formData.brand_chain_name || formData.brand);
-      formDataToSend.append('product_types', formData.product_types);
-      formDataToSend.append('product_sub_types', formData.product_sub_types);
-      
-      // Space Configuration
-      formDataToSend.append('total_capacity', formData.total_capacity);
-      formDataToSend.append('available_seats', formData.available_seats);
-      formDataToSend.append('space_configuration', JSON.stringify(formData.space_types));
+      formDataToSend.append('product_types', formData.product_sub_types || formData.product_types);
       
       // Dynamic Fields
       Object.keys(dynamicFields).forEach(key => {
@@ -915,13 +1187,318 @@ const AddProperty = () => {
         }
       });
       
-      // Pricing Configuration
-      formDataToSend.append('pricing_configuration', JSON.stringify(formData.pricing_options));
+      // Space Configuration - Transform to match API expected format
+      const spaceConfiguration = {
+        totalCapacity: parseInt(formData.total_capacity) || 0,
+        availableSeats: parseInt(formData.available_seats) || 0,
+        hotDesk: {
+          enabled: formData.space_types.hot_desk.enabled,
+          count: parseInt(formData.space_types.hot_desk.flexible_count) || 0
+        },
+        dedicatedDesk: {
+          enabled: formData.space_types.dedicated_desk.enabled,
+          count: parseInt(formData.space_types.dedicated_desk.count) || 0
+        },
+        privateCabin: formData.space_types.private_cabin.enabled ? [{
+          capacity: parseInt(formData.space_types.private_cabin.capacity) || 0,
+          count: parseInt(formData.space_types.private_cabin.count) || 0
+        }] : [],
+        meetingRooms: formData.space_types.meeting_room.enabled ? formData.space_types.meeting_room.rooms.map(room => ({
+          name: room.name,
+          capacity: parseInt(room.capacity) || 0,
+          priceHourly: parseInt(room.hourly_price) || 0,
+          priceDaily: parseInt(room.daily_price) || 0
+        })) : [],
+        conferenceRooms: formData.space_types.conference_room.enabled ? [{
+          capacity: parseInt(formData.space_types.conference_room.capacity) || 0,
+          pricing: formData.space_types.conference_room.pricing
+        }] : [],
+        eventSpaces: formData.space_types.event_space.enabled ? [{
+          capacity: parseInt(formData.space_types.event_space.capacity) || 0,
+          pricing: formData.space_types.event_space.pricing
+        }] : [],
+        virtualOffice: {
+          businessAddress: formData.space_types.virtual_office.business_address,
+          mailHandling: formData.space_types.virtual_office.mail_handling,
+          callHandling: formData.space_types.virtual_office.call_handling
+        },
+        customEnterpriseSolutions: {
+          details: formData.space_types.enterprise_solutions.description,
+          attachments: []
+        }
+      };
+      
+      formDataToSend.append('spaceConfiguration', JSON.stringify(spaceConfiguration));
+      
+      // Pricing Configuration - Transform to match API expected format
+      const pricingConfiguration = {
+        dayPass: {
+          enabled: formData.pricing_options.day_pass.enabled,
+          pricePerSeatPerDay: parseInt(formData.pricing_options.day_pass.price_per_seat) || 0
+        },
+        weeklyPass: {
+          enabled: formData.pricing_options.weekly_pass.enabled,
+          pricePerSeatPerWeek: parseInt(formData.pricing_options.weekly_pass.price_per_seat) || 0
+        },
+        monthlyDesk: {
+          hotDesk: formData.pricing_options.monthly_hot_desk.enabled ? parseInt(formData.pricing_options.monthly_hot_desk.price_per_seat) || 0 : 0,
+          dedicatedDesk: formData.pricing_options.monthly_dedicated_desk.enabled ? parseInt(formData.pricing_options.monthly_dedicated_desk.price_per_seat) || 0 : 0
+        },
+        privateCabins: formData.pricing_options.private_cabins_pricing.enabled ? formData.pricing_options.private_cabins_pricing.plans.map(plan => ({
+          capacity: parseInt(plan.capacity) || 0,
+          pricePerCabinPerMonth: parseInt(plan.price_per_month) || 0
+        })) : [],
+        meetingRooms: formData.pricing_options.meeting_rooms_pricing.enabled ? formData.pricing_options.meeting_rooms_pricing.rooms.map(room => ({
+          capacity: parseInt(room.capacity) || 0,
+          pricePerHour: parseInt(room.price_per_hour) || 0,
+          pricePerDay: parseInt(room.price_per_day) || 0
+        })) : [],
+        conferenceRooms: formData.pricing_options.conference_rooms_pricing.enabled ? [{
+          capacity: parseInt(formData.pricing_options.conference_rooms_pricing.capacity) || 0,
+          pricePerHour: parseInt(formData.pricing_options.conference_rooms_pricing.price_per_hour) || 0,
+          pricePerDay: parseInt(formData.pricing_options.conference_rooms_pricing.price_per_day) || 0
+        }] : [],
+        eventSpaces: formData.pricing_options.event_space_pricing.enabled ? [{
+          capacity: parseInt(formData.pricing_options.event_space_pricing.capacity) || 0,
+          pricePerHour: parseInt(formData.pricing_options.event_space_pricing.price_per_hour) || 0,
+          pricePerDay: parseInt(formData.pricing_options.event_space_pricing.price_per_day) || 0
+        }] : [],
+        virtualOfficePlans: formData.pricing_options.virtual_office_plans.enabled ? [{
+          planType: "Business Address",
+          price: parseInt(formData.pricing_options.virtual_office_plans.business_address_price) || 0
+        }] : [],
+        enterpriseDeals: {
+          customQuote: formData.pricing_options.enterprise_deals.custom_quote,
+          brochureUrl: formData.pricing_options.enterprise_deals.brochure_file ? 
+            URL.createObjectURL(formData.pricing_options.enterprise_deals.brochure_file) : ""
+        }
+      };
+      
+      formDataToSend.append('pricing', JSON.stringify(pricingConfiguration));
       
       // Handle brochure file for enterprise deals
       if (formData.pricing_options.enterprise_deals.brochure_file) {
         formDataToSend.append('enterprise_brochure', formData.pricing_options.enterprise_deals.brochure_file);
       }
+      
+      // Furnishing Types - Send as array of objects
+      const furnishingTypeDescriptions: { [key: string]: string } = {
+        'Bare Shell': 'Raw space with only flooring, walls, basic civil work',
+        'Warm Shell': 'With HVAC, lighting, false ceiling, and basic finishes',
+        'Plug & Play': 'Fully furnished with workstations, IT infrastructure, etc.',
+        'Managed Office': 'Operated and serviced by third-party providers',
+        'Co-working': 'Flexible shared office spaces'
+      };
+
+      formData.furnishing_types.forEach(type => {
+        formDataToSend.append('furnishing_types[]', JSON.stringify({
+          name: type,
+          description: furnishingTypeDescriptions[type] || ''
+        }));
+      });
+
+      // Space & Layout Details - Only send if at least one field is filled
+      const hasSpaceLayoutData = Object.values(formData.space_layout_details).some(val => {
+        if (typeof val === 'object') {
+          return Object.values(val).some(v => v !== '');
+        }
+        return val !== '';
+      });
+
+      if (hasSpaceLayoutData) {
+        const spaceLayoutDetails = {
+          total_built_up_area_sqft: formData.space_layout_details.total_built_up_area_sqft ? 
+            parseInt(formData.space_layout_details.total_built_up_area_sqft) : undefined,
+          carpet_area_sqft: formData.space_layout_details.carpet_area_sqft ? 
+            parseInt(formData.space_layout_details.carpet_area_sqft) : undefined,
+          super_built_up_area_sqft: formData.space_layout_details.super_built_up_area_sqft ? 
+            parseInt(formData.space_layout_details.super_built_up_area_sqft) : undefined,
+          available_space_area_sqft: formData.space_layout_details.available_space_area_sqft ? 
+            parseInt(formData.space_layout_details.available_space_area_sqft) : undefined,
+          building_floors: formData.space_layout_details.building_floors ? 
+            parseInt(formData.space_layout_details.building_floors) : undefined,
+          available_unit_floor: formData.space_layout_details.available_unit_floor ? 
+            parseInt(formData.space_layout_details.available_unit_floor) : undefined,
+          floor_plate_size_sqft: formData.space_layout_details.floor_plate_size_sqft ? 
+            parseInt(formData.space_layout_details.floor_plate_size_sqft) : undefined,
+          seating_capacity: formData.space_layout_details.seating_capacity ? 
+            parseInt(formData.space_layout_details.seating_capacity) : undefined,
+          distribution: {
+            cabins: formData.space_layout_details.distribution.cabins ? 
+              parseInt(formData.space_layout_details.distribution.cabins) : undefined,
+            conference_rooms: formData.space_layout_details.distribution.conference_rooms ? 
+              parseInt(formData.space_layout_details.distribution.conference_rooms) : undefined,
+            workstations: formData.space_layout_details.distribution.workstations ? 
+              parseInt(formData.space_layout_details.distribution.workstations) : undefined,
+          },
+          floor_to_ceiling_height_ft: formData.space_layout_details.floor_to_ceiling_height_ft ? 
+            parseInt(formData.space_layout_details.floor_to_ceiling_height_ft) : undefined,
+          washrooms: {
+            male: formData.space_layout_details.washrooms.male ? 
+              parseInt(formData.space_layout_details.washrooms.male) : undefined,
+            female: formData.space_layout_details.washrooms.female ? 
+              parseInt(formData.space_layout_details.washrooms.female) : undefined,
+            unisex: formData.space_layout_details.washrooms.unisex ? 
+              parseInt(formData.space_layout_details.washrooms.unisex) : undefined,
+          },
+          availability_date: formData.space_layout_details.availability_date || undefined,
+        };
+        
+        formDataToSend.append('space_layout_details', JSON.stringify(spaceLayoutDetails));
+      }
+      
+      // Building & Project Details - Only send if at least one field is filled
+      const hasBuildingProjectData = Object.values(formData.building_project_details).some(val => val !== '');
+
+      if (hasBuildingProjectData) {
+        const buildingProjectDetails = {
+          building_name: formData.building_project_details.building_name || undefined,
+          developer_owner: formData.building_project_details.developer_owner || undefined,
+          building_age: formData.building_project_details.building_age ? 
+            parseInt(formData.building_project_details.building_age) : undefined,
+          building_type: formData.building_project_details.building_type || undefined,
+          total_floors: formData.building_project_details.total_floors ? 
+            parseInt(formData.building_project_details.total_floors) : undefined,
+          basement_available: formData.building_project_details.basement_available === 'yes' ? true : 
+            formData.building_project_details.basement_available === 'no' ? false : undefined,
+          power_load_total_kva: formData.building_project_details.power_load_total_kva ? 
+            parseInt(formData.building_project_details.power_load_total_kva) : undefined,
+          power_per_sqft: formData.building_project_details.power_per_sqft ? 
+            parseFloat(formData.building_project_details.power_per_sqft) : undefined,
+          car_parking_ratio: formData.building_project_details.car_parking_ratio || undefined,
+          nbc_compliance: formData.building_project_details.nbc_compliance || undefined,
+          sez_status: formData.building_project_details.sez_status || undefined,
+        };
+        
+        formDataToSend.append('building_project_details', JSON.stringify(buildingProjectDetails));
+      }
+      
+      // Health, Safety & Wellness - Send as array of attribute objects
+      const healthSafetyAttributes = [
+        { key: 'emergency_exits_signages', name: 'Emergency Exits & Signages' },
+        { key: 'indoor_air_quality', name: 'Indoor Air Quality Monitoring' },
+        { key: 'natural_ventilation', name: 'Natural Ventilation / Daylighting' },
+        { key: 'first_aid_wellness_room', name: 'First Aid Room / Wellness Room' },
+        { key: 'covid_compliant', name: 'Covid-Compliant Protocols' },
+        { key: 'fire_exits_assembly', name: 'Fire Exits and Assembly Area' },
+        { key: 'ergonomic_seating', name: 'Ergonomic Seating Setup' },
+        { key: 'accessibility_disabled', name: 'Accessibility for Differently Abled' },
+      ];
+
+      healthSafetyAttributes.forEach(attr => {
+        const value = formData.health_safety[attr.key as keyof typeof formData.health_safety];
+        if (value) {
+          formDataToSend.append('health_safety[]', JSON.stringify({
+            attribute_name: attr.name,
+            value: value
+          }));
+        }
+      });
+
+      // Sustainability & Utilities - Send as array of attribute objects
+      const sustainabilityAttributes = [
+        { key: 'water_supply_source', name: 'Source of Water Supply' },
+        { key: 'stp_available', name: 'Sewage Treatment Plant (STP)' },
+        { key: 'rainwater_harvesting', name: 'Rainwater Harvesting' },
+        { key: 'renewable_energy', name: 'Renewable Energy Use' },
+        { key: 'energy_efficient_equipment', name: 'Energy Efficient Equipment & Fixtures' },
+        { key: 'waste_segregation', name: 'Waste Segregation & Green Disposal' },
+        { key: 'ev_charging_stations', name: 'E-Vehicle Charging Stations' },
+      ];
+
+      sustainabilityAttributes.forEach(attr => {
+        const value = formData.sustainability[attr.key as keyof typeof formData.sustainability];
+        if (value) {
+          formDataToSend.append('sustainability[]', JSON.stringify({
+            attribute_name: attr.name,
+            value: value
+          }));
+        }
+      });
+
+      // Compliance Documents - Send as array of document objects
+      const complianceDocumentTypes = [
+        { key: 'occupancy_certificate', name: 'Occupancy Certificate' },
+        { key: 'fire_noc', name: 'Fire NOC' },
+        { key: 'pollution_control_noc', name: 'Pollution Control NOC' },
+        { key: 'environmental_clearance', name: 'Environmental Clearance Certificate' },
+        { key: 'zoning_clearance', name: 'Zoning Clearance / Town Planning Approval' },
+        { key: 'lift_safety_certificate', name: 'Lift Safety Certificate' },
+        { key: 'dg_set_approval', name: 'DG Set Approval' },
+        { key: 'building_completion_certificate', name: 'Building Completion Certificate (BCC)' },
+        { key: 'structural_stability_certificate', name: 'Structural Stability Certificate' },
+        { key: 'sez_notification', name: 'SEZ Notification' },
+        { key: 'disaster_management_plan', name: 'Disaster Management / Emergency Evacuation Plan' },
+      ];
+
+      complianceDocumentTypes.forEach(doc => {
+        const file = formData.compliance_documents[doc.key as keyof typeof formData.compliance_documents];
+        if (file) {
+          // Append the file with a unique field name
+          formDataToSend.append(`compliance_doc_${doc.key}`, file);
+          // Also send the document metadata
+          formDataToSend.append('compliance_documents[]', JSON.stringify({
+            document_name: doc.name,
+            file_path: file.name // The actual path will be set by the backend after upload
+          }));
+        } else {
+          // Send with null file_path if no file is uploaded but we want to track it
+          // formDataToSend.append('compliance_documents[]', JSON.stringify({
+          //   document_name: doc.name,
+          //   file_path: null
+          // }));
+        }
+      });
+
+      // Certifications & Ratings - Send as array of certification objects
+      const certificationData = [];
+      
+      if (formData.certifications.leed_igbc) {
+        certificationData.push({
+          certification_name: 'LEED / IGBC Certification',
+          value: formData.certifications.leed_igbc
+        });
+      }
+      
+      if (formData.certifications.well_building) {
+        certificationData.push({
+          certification_name: 'WELL Building Standard',
+          value: formData.certifications.well_building
+        });
+      }
+      
+      if (formData.certifications.smart_building) {
+        certificationData.push({
+          certification_name: 'Smart Building Certification',
+          value: formData.certifications.smart_building
+        });
+      }
+      
+      if (formData.certifications.iso_certifications.length > 0) {
+        certificationData.push({
+          certification_name: 'ISO Certification',
+          value: formData.certifications.iso_certifications.join(', ')
+        });
+      }
+      
+      if (formData.certifications.nbc_compliance) {
+        certificationData.push({
+          certification_name: 'NBC 2016 Compliance',
+          value: formData.certifications.nbc_compliance
+        });
+      }
+      
+      if (formData.certifications.other_certification) {
+        certificationData.push({
+          certification_name: 'Any Other',
+          value: formData.certifications.other_certification,
+          description: 'Custom certification'
+        });
+      }
+
+      certificationData.forEach(cert => {
+        formDataToSend.append('certifications[]', JSON.stringify(cert));
+      });
       
       formDataToSend.append('parking', formData.parking.toString());
       formDataToSend.append('metro_connectivity', formData.metro_connectivity.toString());
@@ -2722,6 +3299,1046 @@ const AddProperty = () => {
                       value={formData.support_contact}
                       onChange={handleInputChange}
                       placeholder="24/7 helpline number (optional)"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <hr />
+
+              {/* Furnishing Type */}
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h5 className="mb-3">
+                    <CIcon icon={cilSettings} className="me-2" />
+                    Furnishing Type
+                  </h5>
+                  <p className="text-muted small mb-3">Select all that apply (optional)</p>
+                </div>
+
+                <div className="col-12">
+                  <div className="d-flex flex-wrap gap-3">
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="furnishing-bare-shell"
+                        checked={formData.furnishing_types.includes('Bare Shell')}
+                        onChange={(e) => handleFurnishingTypeChange('Bare Shell', e.target.checked)}
+                      />
+                      <label className="form-check-label" htmlFor="furnishing-bare-shell">
+                        <strong>Bare Shell</strong>
+                        <br />
+                        <small className="text-muted">Raw space with only flooring, walls, basic civil work</small>
+                      </label>
+                    </div>
+
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="furnishing-warm-shell"
+                        checked={formData.furnishing_types.includes('Warm Shell')}
+                        onChange={(e) => handleFurnishingTypeChange('Warm Shell', e.target.checked)}
+                      />
+                      <label className="form-check-label" htmlFor="furnishing-warm-shell">
+                        <strong>Warm Shell</strong>
+                        <br />
+                        <small className="text-muted">With HVAC, lighting, false ceiling, and basic finishes</small>
+                      </label>
+                    </div>
+
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="furnishing-plug-play"
+                        checked={formData.furnishing_types.includes('Plug & Play')}
+                        onChange={(e) => handleFurnishingTypeChange('Plug & Play', e.target.checked)}
+                      />
+                      <label className="form-check-label" htmlFor="furnishing-plug-play">
+                        <strong>Plug & Play</strong>
+                        <br />
+                        <small className="text-muted">Fully furnished with workstations, IT infrastructure, etc.</small>
+                      </label>
+                    </div>
+
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="furnishing-managed"
+                        checked={formData.furnishing_types.includes('Managed Office')}
+                        onChange={(e) => handleFurnishingTypeChange('Managed Office', e.target.checked)}
+                      />
+                      <label className="form-check-label" htmlFor="furnishing-managed">
+                        <strong>Managed Office</strong>
+                        <br />
+                        <small className="text-muted">Operated and serviced by third-party providers</small>
+                      </label>
+                    </div>
+
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="furnishing-coworking"
+                        checked={formData.furnishing_types.includes('Co-working')}
+                        onChange={(e) => handleFurnishingTypeChange('Co-working', e.target.checked)}
+                      />
+                      <label className="form-check-label" htmlFor="furnishing-coworking">
+                        <strong>Co-working</strong>
+                        <br />
+                        <small className="text-muted">Flexible shared office spaces</small>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <hr />
+
+              {/* Space & Layout Details */}
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h5 className="mb-3">
+                    <CIcon icon={cilChart} className="me-2" />
+                    Space & Layout Details
+                  </h5>
+                  <p className="text-muted small mb-3">All fields in this section are optional</p>
+                </div>
+
+                {/* Area Details */}
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Total Built-up Area (sq. ft.)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.space_layout_details.total_built_up_area_sqft}
+                      onChange={(e) => handleSpaceLayoutChange('total_built_up_area_sqft', e.target.value)}
+                      placeholder="e.g., 25000"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Carpet Area (sq. ft.)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.space_layout_details.carpet_area_sqft}
+                      onChange={(e) => handleSpaceLayoutChange('carpet_area_sqft', e.target.value)}
+                      placeholder="e.g., 18000"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Super Built-up Area (sq. ft.)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.space_layout_details.super_built_up_area_sqft}
+                      onChange={(e) => handleSpaceLayoutChange('super_built_up_area_sqft', e.target.value)}
+                      placeholder="e.g., 27000"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Available Space Area (sq. ft.)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.space_layout_details.available_space_area_sqft}
+                      onChange={(e) => handleSpaceLayoutChange('available_space_area_sqft', e.target.value)}
+                      placeholder="e.g., 5000"
+                    />
+                  </div>
+                </div>
+
+                {/* Building Details */}
+                <div className="col-md-4">
+                  <div className="mb-3">
+                    <label className="form-label">Number of Floors in Building</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.space_layout_details.building_floors}
+                      onChange={(e) => handleSpaceLayoutChange('building_floors', e.target.value)}
+                      placeholder="e.g., 12"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-4">
+                  <div className="mb-3">
+                    <label className="form-label">Floor Number of Available Unit</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.space_layout_details.available_unit_floor}
+                      onChange={(e) => handleSpaceLayoutChange('available_unit_floor', e.target.value)}
+                      placeholder="e.g., 5"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-4">
+                  <div className="mb-3">
+                    <label className="form-label">Floor Plate Size (sq. ft.)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.space_layout_details.floor_plate_size_sqft}
+                      onChange={(e) => handleSpaceLayoutChange('floor_plate_size_sqft', e.target.value)}
+                      placeholder="e.g., 2200"
+                    />
+                  </div>
+                </div>
+
+                {/* Seating & Distribution */}
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Seating Capacity (Workstations)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.space_layout_details.seating_capacity}
+                      onChange={(e) => handleSpaceLayoutChange('seating_capacity', e.target.value)}
+                      placeholder="e.g., 150"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Height from Floor to Ceiling (ft.)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.space_layout_details.floor_to_ceiling_height_ft}
+                      onChange={(e) => handleSpaceLayoutChange('floor_to_ceiling_height_ft', e.target.value)}
+                      placeholder="e.g., 12"
+                    />
+                  </div>
+                </div>
+
+                {/* Distribution */}
+                <div className="col-12">
+                  <h6 className="mb-3 mt-2">Cabin / Conference Room / Workstation Distribution</h6>
+                </div>
+
+                <div className="col-md-4">
+                  <div className="mb-3">
+                    <label className="form-label">Cabins</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.space_layout_details.distribution.cabins}
+                      onChange={(e) => handleSpaceLayoutChange('distribution', e.target.value, 'cabins')}
+                      placeholder="e.g., 10"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-4">
+                  <div className="mb-3">
+                    <label className="form-label">Conference Rooms</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.space_layout_details.distribution.conference_rooms}
+                      onChange={(e) => handleSpaceLayoutChange('distribution', e.target.value, 'conference_rooms')}
+                      placeholder="e.g., 3"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-4">
+                  <div className="mb-3">
+                    <label className="form-label">Workstations</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.space_layout_details.distribution.workstations}
+                      onChange={(e) => handleSpaceLayoutChange('distribution', e.target.value, 'workstations')}
+                      placeholder="e.g., 120"
+                    />
+                  </div>
+                </div>
+
+                {/* Washrooms */}
+                <div className="col-12">
+                  <h6 className="mb-3 mt-2">Washrooms</h6>
+                </div>
+
+                <div className="col-md-4">
+                  <div className="mb-3">
+                    <label className="form-label">Male</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.space_layout_details.washrooms.male}
+                      onChange={(e) => handleSpaceLayoutChange('washrooms', e.target.value, 'male')}
+                      placeholder="e.g., 4"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-4">
+                  <div className="mb-3">
+                    <label className="form-label">Female</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.space_layout_details.washrooms.female}
+                      onChange={(e) => handleSpaceLayoutChange('washrooms', e.target.value, 'female')}
+                      placeholder="e.g., 4"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-4">
+                  <div className="mb-3">
+                    <label className="form-label">Unisex</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.space_layout_details.washrooms.unisex}
+                      onChange={(e) => handleSpaceLayoutChange('washrooms', e.target.value, 'unisex')}
+                      placeholder="e.g., 2"
+                    />
+                  </div>
+                </div>
+
+                {/* Availability Date */}
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Availability Date</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={formData.space_layout_details.availability_date}
+                      onChange={(e) => handleSpaceLayoutChange('availability_date', e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <hr />
+
+              {/* Building & Project Details */}
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h5 className="mb-3">
+                    <CIcon icon={cilBuilding} className="me-2" />
+                    Building & Project Details
+                  </h5>
+                  <p className="text-muted small mb-3">All fields in this section are optional</p>
+                </div>
+
+                {/* Building Name & Developer */}
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Building Name / Project Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.building_project_details.building_name}
+                      onChange={(e) => handleBuildingProjectChange('building_name', e.target.value)}
+                      placeholder="e.g., Allied House"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Developer / Owner</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.building_project_details.developer_owner}
+                      onChange={(e) => handleBuildingProjectChange('developer_owner', e.target.value)}
+                      placeholder="e.g., Prestige Group"
+                    />
+                  </div>
+                </div>
+
+                {/* Building Age & Type */}
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Building Age (in years)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.building_project_details.building_age}
+                      onChange={(e) => handleBuildingProjectChange('building_age', e.target.value)}
+                      placeholder="e.g., 5"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Building Type</label>
+                    <select
+                      className="form-select"
+                      value={formData.building_project_details.building_type}
+                      onChange={(e) => handleBuildingProjectChange('building_type', e.target.value)}
+                    >
+                      <option value="">Select Building Type</option>
+                      <option value="IT/ITES Park">IT/ITES Park</option>
+                      <option value="Commercial">Commercial</option>
+                      <option value="SEZ">SEZ</option>
+                      <option value="Tech Park">Tech Park</option>
+                      <option value="Mixed Use">Mixed Use</option>
+                      <option value="Green Building">Green Building</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Total Floors & Basement */}
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Total Number of Floors</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.building_project_details.total_floors}
+                      onChange={(e) => handleBuildingProjectChange('total_floors', e.target.value)}
+                      placeholder="e.g., 10"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Basement Availability</label>
+                    <select
+                      className="form-select"
+                      value={formData.building_project_details.basement_available}
+                      onChange={(e) => handleBuildingProjectChange('basement_available', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Power Details */}
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Power Load Available (Total KVA)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.building_project_details.power_load_total_kva}
+                      onChange={(e) => handleBuildingProjectChange('power_load_total_kva', e.target.value)}
+                      placeholder="e.g., 500"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Power Availability per sq. ft. (KVA/sq. ft.)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="form-control"
+                      value={formData.building_project_details.power_per_sqft}
+                      onChange={(e) => handleBuildingProjectChange('power_per_sqft', e.target.value)}
+                      placeholder="e.g., 0.05"
+                    />
+                  </div>
+                </div>
+
+                {/* Car Parking & Compliance */}
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Car Parking Ratio</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.building_project_details.car_parking_ratio}
+                      onChange={(e) => handleBuildingProjectChange('car_parking_ratio', e.target.value)}
+                      placeholder="e.g., 1:1000 (1 car park per 1000 sq.ft.)"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">NBC (National Building Code) Compliance</label>
+                    <select
+                      className="form-select"
+                      value={formData.building_project_details.nbc_compliance}
+                      onChange={(e) => handleBuildingProjectChange('nbc_compliance', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                      <option value="Partial">Partial</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* SEZ Status */}
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">SEZ / Non-SEZ</label>
+                    <select
+                      className="form-select"
+                      value={formData.building_project_details.sez_status}
+                      onChange={(e) => handleBuildingProjectChange('sez_status', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="SEZ">SEZ</option>
+                      <option value="Non-SEZ">Non-SEZ</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <hr />
+
+              {/* Health, Safety & Wellness */}
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h5 className="mb-3">
+                    ❤️ Health, Safety & Wellness
+                  </h5>
+                  <p className="text-muted small mb-3">All fields in this section are optional</p>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Emergency Exits & Signages</label>
+                    <select
+                      className="form-select"
+                      value={formData.health_safety.emergency_exits_signages}
+                      onChange={(e) => handleHealthSafetyChange('emergency_exits_signages', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Indoor Air Quality Monitoring</label>
+                    <select
+                      className="form-select"
+                      value={formData.health_safety.indoor_air_quality}
+                      onChange={(e) => handleHealthSafetyChange('indoor_air_quality', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Natural Ventilation / Daylighting</label>
+                    <select
+                      className="form-select"
+                      value={formData.health_safety.natural_ventilation}
+                      onChange={(e) => handleHealthSafetyChange('natural_ventilation', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">First Aid Room / Wellness Room</label>
+                    <select
+                      className="form-select"
+                      value={formData.health_safety.first_aid_wellness_room}
+                      onChange={(e) => handleHealthSafetyChange('first_aid_wellness_room', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Covid-Compliant Protocols</label>
+                    <select
+                      className="form-select"
+                      value={formData.health_safety.covid_compliant}
+                      onChange={(e) => handleHealthSafetyChange('covid_compliant', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Fire Exits and Assembly Area</label>
+                    <select
+                      className="form-select"
+                      value={formData.health_safety.fire_exits_assembly}
+                      onChange={(e) => handleHealthSafetyChange('fire_exits_assembly', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Ergonomic Seating Setup</label>
+                    <select
+                      className="form-select"
+                      value={formData.health_safety.ergonomic_seating}
+                      onChange={(e) => handleHealthSafetyChange('ergonomic_seating', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Accessibility for Differently Abled</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.health_safety.accessibility_disabled}
+                      onChange={(e) => handleHealthSafetyChange('accessibility_disabled', e.target.value)}
+                      placeholder="e.g., Ramps, Lifts with Braille, Accessible Washrooms"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <hr />
+
+              {/* Sustainability & Utilities */}
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h5 className="mb-3">
+                    🌱 Sustainability & Utilities
+                  </h5>
+                  <p className="text-muted small mb-3">All fields in this section are optional</p>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Source of Water Supply</label>
+                    <select
+                      className="form-select"
+                      value={formData.sustainability.water_supply_source}
+                      onChange={(e) => handleSustainabilityChange('water_supply_source', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Municipal">Municipal</option>
+                      <option value="Borewell">Borewell</option>
+                      <option value="STP">STP</option>
+                      <option value="Recycled">Recycled</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Sewage Treatment Plant (STP)</label>
+                    <select
+                      className="form-select"
+                      value={formData.sustainability.stp_available}
+                      onChange={(e) => handleSustainabilityChange('stp_available', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Rainwater Harvesting</label>
+                    <select
+                      className="form-select"
+                      value={formData.sustainability.rainwater_harvesting}
+                      onChange={(e) => handleSustainabilityChange('rainwater_harvesting', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Renewable Energy Use</label>
+                    <select
+                      className="form-select"
+                      value={formData.sustainability.renewable_energy}
+                      onChange={(e) => handleSustainabilityChange('renewable_energy', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Solar">Solar</option>
+                      <option value="Wind">Wind</option>
+                      <option value="Solar & Wind">Solar & Wind</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Energy Efficient Equipment & Fixtures</label>
+                    <select
+                      className="form-select"
+                      value={formData.sustainability.energy_efficient_equipment}
+                      onChange={(e) => handleSustainabilityChange('energy_efficient_equipment', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Waste Segregation & Green Disposal</label>
+                    <select
+                      className="form-select"
+                      value={formData.sustainability.waste_segregation}
+                      onChange={(e) => handleSustainabilityChange('waste_segregation', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">E-Vehicle Charging Stations</label>
+                    <select
+                      className="form-select"
+                      value={formData.sustainability.ev_charging_stations}
+                      onChange={(e) => handleSustainabilityChange('ev_charging_stations', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <hr />
+
+              {/* Statutory & Regulatory Compliance */}
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h5 className="mb-3">
+                    📄 Statutory & Regulatory Compliance
+                  </h5>
+                  <p className="text-muted small mb-3">Upload compliance documents (all optional)</p>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Occupancy Certificate (OC)</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => handleComplianceDocumentChange('occupancy_certificate', e.target.files?.[0] || null)}
+                    />
+                    {formData.compliance_documents.occupancy_certificate && (
+                      <small className="text-success">✓ {formData.compliance_documents.occupancy_certificate.name}</small>
+                    )}
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Fire NOC</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => handleComplianceDocumentChange('fire_noc', e.target.files?.[0] || null)}
+                    />
+                    {formData.compliance_documents.fire_noc && (
+                      <small className="text-success">✓ {formData.compliance_documents.fire_noc.name}</small>
+                    )}
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Pollution Control NOC</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => handleComplianceDocumentChange('pollution_control_noc', e.target.files?.[0] || null)}
+                    />
+                    {formData.compliance_documents.pollution_control_noc && (
+                      <small className="text-success">✓ {formData.compliance_documents.pollution_control_noc.name}</small>
+                    )}
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Environmental Clearance Certificate</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => handleComplianceDocumentChange('environmental_clearance', e.target.files?.[0] || null)}
+                    />
+                    {formData.compliance_documents.environmental_clearance && (
+                      <small className="text-success">✓ {formData.compliance_documents.environmental_clearance.name}</small>
+                    )}
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Zoning Clearance / Town Planning Approval</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => handleComplianceDocumentChange('zoning_clearance', e.target.files?.[0] || null)}
+                    />
+                    {formData.compliance_documents.zoning_clearance && (
+                      <small className="text-success">✓ {formData.compliance_documents.zoning_clearance.name}</small>
+                    )}
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Lift Safety Certificate</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => handleComplianceDocumentChange('lift_safety_certificate', e.target.files?.[0] || null)}
+                    />
+                    {formData.compliance_documents.lift_safety_certificate && (
+                      <small className="text-success">✓ {formData.compliance_documents.lift_safety_certificate.name}</small>
+                    )}
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">DG Set Approval</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => handleComplianceDocumentChange('dg_set_approval', e.target.files?.[0] || null)}
+                    />
+                    {formData.compliance_documents.dg_set_approval && (
+                      <small className="text-success">✓ {formData.compliance_documents.dg_set_approval.name}</small>
+                    )}
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Building Completion Certificate (BCC)</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => handleComplianceDocumentChange('building_completion_certificate', e.target.files?.[0] || null)}
+                    />
+                    {formData.compliance_documents.building_completion_certificate && (
+                      <small className="text-success">✓ {formData.compliance_documents.building_completion_certificate.name}</small>
+                    )}
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Structural Stability Certificate</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => handleComplianceDocumentChange('structural_stability_certificate', e.target.files?.[0] || null)}
+                    />
+                    {formData.compliance_documents.structural_stability_certificate && (
+                      <small className="text-success">✓ {formData.compliance_documents.structural_stability_certificate.name}</small>
+                    )}
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">SEZ Notification (if applicable)</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => handleComplianceDocumentChange('sez_notification', e.target.files?.[0] || null)}
+                    />
+                    {formData.compliance_documents.sez_notification && (
+                      <small className="text-success">✓ {formData.compliance_documents.sez_notification.name}</small>
+                    )}
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Disaster Management / Emergency Evacuation Plan</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => handleComplianceDocumentChange('disaster_management_plan', e.target.files?.[0] || null)}
+                    />
+                    {formData.compliance_documents.disaster_management_plan && (
+                      <small className="text-success">✓ {formData.compliance_documents.disaster_management_plan.name}</small>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <hr />
+
+              {/* Certifications & Ratings */}
+              <div className="row mb-4">
+                <div className="col-12">
+                  <h5 className="mb-3">
+                    🏅 Certifications & Ratings
+                  </h5>
+                  <p className="text-muted small mb-3">All fields in this section are optional</p>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">LEED / IGBC Certification</label>
+                    <select
+                      className="form-select"
+                      value={formData.certifications.leed_igbc}
+                      onChange={(e) => handleCertificationChange('leed_igbc', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="None">None</option>
+                      <option value="Certified">Certified</option>
+                      <option value="Silver">Silver</option>
+                      <option value="Gold">Gold</option>
+                      <option value="Platinum">Platinum</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">WELL Building Standard</label>
+                    <select
+                      className="form-select"
+                      value={formData.certifications.well_building}
+                      onChange={(e) => handleCertificationChange('well_building', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Smart Building Certification</label>
+                    <select
+                      className="form-select"
+                      value={formData.certifications.smart_building}
+                      onChange={(e) => handleCertificationChange('smart_building', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">NBC 2016 Compliance</label>
+                    <select
+                      className="form-select"
+                      value={formData.certifications.nbc_compliance}
+                      onChange={(e) => handleCertificationChange('nbc_compliance', e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="col-12">
+                  <div className="mb-3">
+                    <label className="form-label">ISO Certifications (Select all that apply)</label>
+                    <div className="d-flex flex-wrap gap-3">
+                      {['9001', '14001', '45001', '27001', '50001'].map(iso => (
+                        <div className="form-check" key={iso}>
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id={`iso-${iso}`}
+                            checked={formData.certifications.iso_certifications.includes(iso)}
+                            onChange={(e) => handleISOCertificationChange(iso, e.target.checked)}
+                          />
+                          <label className="form-check-label" htmlFor={`iso-${iso}`}>
+                            ISO {iso}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Any Other Certification (Specify)</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.certifications.other_certification}
+                      onChange={(e) => handleCertificationChange('other_certification', e.target.value)}
+                      placeholder="e.g., Local Green Certification"
                     />
                   </div>
                 </div>

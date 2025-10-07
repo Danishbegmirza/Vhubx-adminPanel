@@ -112,6 +112,26 @@ export const permissionsService = {
         ]
       },
       {
+        title: 'Corporate Management',
+        path: '/corporate',
+        icon: 'cilBriefcase',
+        moduleName: 'Corporate Management',
+        children: [
+          {
+            title: 'Add Corporate User',
+            path: '/corporate/add',
+            icon: 'cilUserPlus',
+            moduleName: 'Corporate Management'
+          },
+          {
+            title: 'Corporate User List',
+            path: '/corporate/list',
+            icon: 'cilList',
+            moduleName: 'Corporate Management'
+          }
+        ]
+      },
+      {
         title: 'Sub User Management',
         path: '/sub-users',
         icon: 'cilPeople',
@@ -307,6 +327,11 @@ export const permissionsService = {
         return true;
       }
       
+      // Special handling for userType 4 - show Corporate Management even if permissions aren't set
+      if (userType === 4 && navItem.moduleName === 'Corporate Management') {
+        return true;
+      }
+      
       // Check if user has view permission for this module
       const hasViewPermission = this.hasPermission(permissions, navItem.moduleName, 'view');
       
@@ -319,6 +344,10 @@ export const permissionsService = {
         navItem.children = navItem.children.filter(child => {
           // Special handling for userType 4 (admin) - show Amenities Management children
           if (userType === 4 && child.moduleName === 'Amenities Management') {
+            return true;
+          }
+          // Special handling for userType 4 - show Corporate Management children
+          if (userType === 4 && child.moduleName === 'Corporate Management') {
             return true;
           }
           return this.hasPermission(permissions, child.moduleName, 'view');

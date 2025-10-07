@@ -52,6 +52,9 @@ import SpaceTypeList from './pages/SpaceTypeList';
 import SubTypeList from './pages/SubTypeList';
 import AddAmenityMaster from './pages/AddAmenityMaster';
 import ListAmenitiesMaster from './pages/ListAmenitiesMaster';
+import AddCorporateUser from './pages/AddCorporateUser';
+import CorporateUserList from './pages/CorporateUserList';
+import EditCorporateUser from './pages/EditCorporateUser';
 
 // Import components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -248,6 +251,11 @@ const AppContent: React.FC = () => {
         {/* Amenities Routes */}
         <Route path="/amenities/add" element={finalIsAuthenticated ? <AuthenticatedLayout><AddAmenityMaster /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
         <Route path="/amenities/list" element={finalIsAuthenticated ? <AuthenticatedLayout><ListAmenitiesMaster /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
+        
+        {/* Corporate Management Routes */}
+        <Route path="/corporate/add" element={finalIsAuthenticated ? <AuthenticatedLayout><AddCorporateUser /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
+        <Route path="/corporate/list" element={finalIsAuthenticated ? <AuthenticatedLayout><CorporateUserList /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
+        <Route path="/corporate/edit/:id" element={finalIsAuthenticated ? <AuthenticatedLayout><EditCorporateUser /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
       </Routes>
     </div>
   );

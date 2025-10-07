@@ -42,6 +42,7 @@ interface Coupon {
 
 interface Property {
   id: number;
+  property_id: string;
   name_of_establishment: string;
   userid: number | null;
   categoryId: number;
@@ -49,6 +50,7 @@ interface Property {
   subcategoryId: number;
   brand: string | null;
   product_types: string;
+  product_sub_types?: string;
   inventory_type: string | null;
   parking: number;
   metro_connectivity: number;
@@ -73,6 +75,9 @@ interface Property {
   seating_capacity: number | null;
   consultant: Consultant | {};
   coupons: Coupon[] | null;
+  city?: string;
+  state_region?: string;
+  locality_micro_market?: string;
 }
 
 interface ApiResponse {
@@ -89,6 +94,8 @@ const PropertyList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [productTypeFilter, setProductTypeFilter] = useState('all');
+  const [subProductTypeFilter, setSubProductTypeFilter] = useState('all');
+  const [locationFilter, setLocationFilter] = useState('all');
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +103,10 @@ const PropertyList = () => {
   const [totalProperties, setTotalProperties] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [productTypes, setProductTypes] = useState<string[]>([]);
+  const [subProductTypes, setSubProductTypes] = useState<string[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
+  const [productTypesData, setProductTypesData] = useState<Array<{id: number, name: string}>>([]);
+  const [subProductTypesData, setSubProductTypesData] = useState<Array<{id: number, name: string}>>([]);
   
   // Action states
   const [actionLoading, setActionLoading] = useState(false);
@@ -148,6 +159,28 @@ const PropertyList = () => {
 
   const handleProductTypeFilterChange = (productType: string) => {
     setProductTypeFilter(productType);
+    setSubProductTypeFilter('all'); // Reset sub product type when product type changes
+    setCurrentPage(1);
+    
+    // Fetch sub product types if a product type is selected
+    if (productType !== 'all') {
+      const selectedProductType = productTypesData.find(type => type.name === productType);
+      if (selectedProductType) {
+        fetchSubProductTypes(selectedProductType.id);
+      }
+    } else {
+      setSubProductTypesData([]);
+      setSubProductTypes([]);
+    }
+  };
+
+  const handleSubProductTypeFilterChange = (subProductType: string) => {
+    setSubProductTypeFilter(subProductType);
+    setCurrentPage(1);
+  };
+
+  const handleLocationFilterChange = (location: string) => {
+    setLocationFilter(location);
     setCurrentPage(1);
   };
 
@@ -155,10 +188,55 @@ const PropertyList = () => {
     setSearchTerm('');
     setSearchQuery('');
     setProductTypeFilter('all');
+    setSubProductTypeFilter('all');
+    setLocationFilter('all');
     setCurrentPage(1);
   };
 
-  const fetchProperties = async (page: number = 1, search: string = '', productType: string = 'all') => {
+  // Fetch product types from API
+  const fetchProductTypes = async () => {
+    try {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/property/category`, {
+        method: 'GET'
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.status) {
+        setProductTypesData(data.data);
+        const uniqueProductTypes = Array.from(new Set(data.data.map((type: any) => type.name).filter((name: any) => typeof name === 'string'))) as string[];
+        setProductTypes(uniqueProductTypes);
+      }
+    } catch (error) {
+      console.error('Error fetching product types:', error);
+    }
+  };
+
+  // Fetch sub product types based on selected parent
+  const fetchSubProductTypes = async (parentId: number) => {
+    try {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/property/category?parentId=${parentId}`, {
+        method: 'GET'
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.status) {
+        setSubProductTypesData(data.data);
+        const uniqueSubProductTypes = Array.from(new Set(data.data.map((type: any) => type.name).filter((name: any) => typeof name === 'string'))) as string[];
+        setSubProductTypes(uniqueSubProductTypes);
+      } else {
+        setSubProductTypesData([]);
+        setSubProductTypes([]);
+      }
+    } catch (error) {
+      console.error('Error fetching sub product types:', error);
+      setSubProductTypesData([]);
+      setSubProductTypes([]);
+    }
+  };
+
+  const fetchProperties = async (page: number = 1, search: string = '', productType: string = 'all', subProductType: string = 'all', location: string = 'all') => {
     setLoading(true);
     setError(null);
     
@@ -189,6 +267,14 @@ const PropertyList = () => {
         url += `&product_type=${encodeURIComponent(productType)}`;
       }
 
+      if (subProductType !== 'all') {
+        url += `&product_sub_type=${encodeURIComponent(subProductType)}`;
+      }
+
+      if (location !== 'all') {
+        url += `&city=${encodeURIComponent(location)}`;
+      }
+
       const response = await apiService.authFetch(url, {
         method: 'GET'
       });
@@ -203,6 +289,13 @@ const PropertyList = () => {
         // Extract unique product types for filters
         const uniqueProductTypes = Array.from(new Set(data.data.spaceList.map(property => property.product_types)));
         setProductTypes(uniqueProductTypes);
+        
+        // Extract unique locations for filters
+        const uniqueLocations = Array.from(new Set(data.data.spaceList
+          .map(property => property.city)
+          .filter(city => city && city.trim() !== '')
+        ));
+        setLocations(uniqueLocations);
       } else {
         setError(data.message || 'Failed to fetch properties');
         showAlert('Error', data.message || 'Failed to fetch properties', 'error');
@@ -240,7 +333,7 @@ const PropertyList = () => {
 
       if (response.ok && data.status) {
         showAlert('Success', 'Property deleted successfully!', 'success');
-        fetchProperties(currentPage, searchQuery, productTypeFilter);
+        fetchProperties(currentPage, searchQuery, productTypeFilter, subProductTypeFilter, locationFilter);
       } else {
         showAlert('Error', data.message || 'Failed to delete property', 'error');
       }
@@ -292,8 +385,12 @@ const PropertyList = () => {
   };
 
   useEffect(() => {
-    fetchProperties(currentPage, searchQuery, productTypeFilter);
-  }, [currentPage, searchQuery, productTypeFilter]);
+    fetchProperties(currentPage, searchQuery, productTypeFilter, subProductTypeFilter, locationFilter);
+  }, [currentPage, searchQuery, productTypeFilter, subProductTypeFilter, locationFilter]);
+
+  useEffect(() => {
+    fetchProductTypes();
+  }, []);
 
   return (
     <div className="property-list-page">
@@ -325,7 +422,7 @@ const PropertyList = () => {
         <div className="card mb-4">
           <div className="card-body">
             <div className="row">
-              <div className="col-md-6">
+              <div className="col-md-4">
                 <div className="input-group">
                   <span className="input-group-text">
                     <CIcon icon={cilSearch} />
@@ -348,7 +445,7 @@ const PropertyList = () => {
                 </div>
               </div>
               
-              <div className="col-md-4">
+              <div className="col-md-2">
                 <select
                   className="form-select"
                   value={productTypeFilter}
@@ -357,6 +454,33 @@ const PropertyList = () => {
                   <option value="all">All Product Types</option>
                   {productTypes.map((type) => (
                     <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-md-2">
+                <select
+                  className="form-select"
+                  value={subProductTypeFilter}
+                  onChange={(e) => handleSubProductTypeFilterChange(e.target.value)}
+                  disabled={productTypeFilter === 'all'}
+                >
+                  <option value="all">All Sub Types</option>
+                  {subProductTypes.map((type) => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-md-2">
+                <select
+                  className="form-select"
+                  value={locationFilter}
+                  onChange={(e) => handleLocationFilterChange(e.target.value)}
+                >
+                  <option value="all">All Locations</option>
+                  {locations.map((location) => (
+                    <option key={location} value={location}>{location}</option>
                   ))}
                 </select>
               </div>
@@ -402,12 +526,14 @@ const PropertyList = () => {
                   <table className="table table-hover">
                     <thead className="table-light">
                       <tr>
+                        <th>Property ID</th>
                         <th>Property</th>
+                        {/* <th>Brand</th> */}
                         <th>Location</th>
                         <th>Contact</th>
                         <th>Details</th>
                         <th>Features</th>
-                        <th>Price</th>
+                        {/* <th>Price</th> */}
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -416,6 +542,7 @@ const PropertyList = () => {
                         const consultantInfo = getConsultantInfo(property);
                         return (
                           <tr key={property.id}>
+                            <td>{property?.property_id}</td>
                             <td>
                               <div className="d-flex align-items-center">
                                 <div className="bg-light rounded me-3 d-flex align-items-center justify-content-center" style={{ width: '50px', height: '50px' }}>
@@ -429,7 +556,11 @@ const PropertyList = () => {
                             </td>
                             <td>
                               <div>
-                                <div className="fw-bold">Location</div>
+                                <div className="fw-bold">{property.city || 'N/A'}</div>
+                                <small className="text-muted">
+                                  {property.locality_micro_market || 'N/A'}
+                                </small>
+                                <br />
                                 <small className="text-muted">
                                   Lat: {property.latitude}, Long: {property.longitude}
                                 </small>
@@ -460,6 +591,14 @@ const PropertyList = () => {
                                 <small className="text-muted">
                                   {property.center_type || 'N/A'}
                                 </small>
+                                {property.product_sub_types && (
+                                  <>
+                                    <br />
+                                    <small className="text-info">
+                                      Sub Type: {property.product_sub_types}
+                                    </small>
+                                  </>
+                                )}
                               </div>
                             </td>
                             <td>
