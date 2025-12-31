@@ -351,7 +351,7 @@ const AddProperty = () => {
         return;
       }
 
-      const response = await fetch('http://107.22.44.203:3000/api/v1/property/category', {
+      const response = await fetch('http://35.173.253.61:3000/api/v1/property/category', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -386,7 +386,7 @@ const AddProperty = () => {
         return;
       }
 
-      const response = await fetch(`http://107.22.44.203:3000/api/v1/property/category?parentId=${parentId}`, {
+      const response = await fetch(`http://35.173.253.61:3000/api/v1/property/category?parentId=${parentId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -420,7 +420,7 @@ const AddProperty = () => {
         return;
       }
 
-      const response = await fetch(`http://107.22.44.203:3000/api/v1/workspace/product/dynamic-field?product_type=${productType}`, {
+      const response = await fetch(`http://35.173.253.61:3000/api/v1/workspace/product/dynamic-field?product_type=${productType}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -1128,7 +1128,7 @@ const AddProperty = () => {
   useEffect(() => {
     const fetchEstablishmentTypes = async () => {
       try {
-        const response = await fetch('http://107.22.44.203:3000/api/v1/workspace/establishment/list');
+        const response = await fetch('http://35.173.253.61:3000/api/v1/workspace/establishment/list');
         const data = await response.json();
         
         if (data.status && data.data?.data) {
