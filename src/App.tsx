@@ -55,6 +55,7 @@ import ListAmenitiesMaster from './pages/ListAmenitiesMaster';
 import AddCorporateUser from './pages/AddCorporateUser';
 import CorporateUserList from './pages/CorporateUserList';
 import EditCorporateUser from './pages/EditCorporateUser';
+import RequirementList from './pages/RequirementList';
 
 // Import components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -256,6 +257,9 @@ const AppContent: React.FC = () => {
         <Route path="/corporate/add" element={finalIsAuthenticated ? <AuthenticatedLayout><AddCorporateUser /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
         <Route path="/corporate/list" element={finalIsAuthenticated ? <AuthenticatedLayout><CorporateUserList /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
         <Route path="/corporate/edit/:id" element={finalIsAuthenticated ? <AuthenticatedLayout><EditCorporateUser /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
+        
+        {/* Requirements Routes */}
+        <Route path="/requirements/list" element={finalIsAuthenticated ? <AuthenticatedLayout><RequirementList /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
       </Routes>
     </div>
   );

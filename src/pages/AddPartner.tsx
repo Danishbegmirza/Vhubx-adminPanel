@@ -277,16 +277,22 @@ const AddPartner = () => {
                   <CIcon icon={cilCalendar} className="me-2" />
                   Working Days *
                 </label>
-                <input
-                  type="text"
+                <select
                   className="form-control"
                   id="working_days"
                   name="working_days"
                   value={formData.working_days}
                   onChange={handleInputChange}
-                  placeholder="e.g., Mon-Fri"
                   required
-                />
+                >
+                  <option value="">Select Working Days</option>
+                  <option value="Mon-Fri">Mon-Fri</option>
+                  <option value="Mon-Sat">Mon-Sat</option>
+                  <option value="Sun-Sat">Sun-Sat</option>
+                  <option value="Weekdays">Weekdays (Mon-Fri)</option>
+                  <option value="Weekends">Weekends (Sat-Sun)</option>
+                  <option value="All Days">All Days</option>
+                </select>
               </div>
 
               <div className="col-md-6 mb-3">
@@ -294,16 +300,40 @@ const AddPartner = () => {
                   <CIcon icon={cilClock} className="me-2" />
                   Opening Time *
                 </label>
-                <input
-                  type="text"
+                <select
                   className="form-control"
                   id="opening_time"
                   name="opening_time"
                   value={formData.opening_time}
                   onChange={handleInputChange}
-                  placeholder="e.g., 09:00 AM"
                   required
-                />
+                >
+                  <option value="">Select Opening Time</option>
+                  <option value="12:00 AM">12:00 AM</option>
+                  <option value="1:00 AM">1:00 AM</option>
+                  <option value="2:00 AM">2:00 AM</option>
+                  <option value="3:00 AM">3:00 AM</option>
+                  <option value="4:00 AM">4:00 AM</option>
+                  <option value="5:00 AM">5:00 AM</option>
+                  <option value="6:00 AM">6:00 AM</option>
+                  <option value="7:00 AM">7:00 AM</option>
+                  <option value="8:00 AM">8:00 AM</option>
+                  <option value="9:00 AM">9:00 AM</option>
+                  <option value="10:00 AM">10:00 AM</option>
+                  <option value="11:00 AM">11:00 AM</option>
+                  <option value="12:00 PM">12:00 PM</option>
+                  <option value="1:00 PM">1:00 PM</option>
+                  <option value="2:00 PM">2:00 PM</option>
+                  <option value="3:00 PM">3:00 PM</option>
+                  <option value="4:00 PM">4:00 PM</option>
+                  <option value="5:00 PM">5:00 PM</option>
+                  <option value="6:00 PM">6:00 PM</option>
+                  <option value="7:00 PM">7:00 PM</option>
+                  <option value="8:00 PM">8:00 PM</option>
+                  <option value="9:00 PM">9:00 PM</option>
+                  <option value="10:00 PM">10:00 PM</option>
+                  <option value="11:00 PM">11:00 PM</option>
+                </select>
               </div>
 
               <div className="col-md-6 mb-3">

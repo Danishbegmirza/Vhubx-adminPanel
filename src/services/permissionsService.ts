@@ -298,6 +298,12 @@ export const permissionsService = {
         ]
       },
       {
+        title: 'Requirements',
+        path: '/requirements/list',
+        icon: 'cilNewspaper',
+        moduleName: 'Requirements'
+      },
+      {
         title: 'Payments',
         path: '/payments',
         icon: 'cilCreditCard',
@@ -327,8 +333,18 @@ export const permissionsService = {
         return true;
       }
       
-      // Special handling for userType 4 - show Corporate Management even if permissions aren't set
+      // Special handling for userType 4 (super admin) - show Requirements even if permissions aren't set
+      if (userType === 4 && navItem.moduleName === 'Requirements') {
+        return true;
+      }
+      
+      // Special handling for userType 4 (super admin) - show Corporate Management
       if (userType === 4 && navItem.moduleName === 'Corporate Management') {
+        return true;
+      }
+      
+      // Special handling for userType 2 - show Corporate Management even if permissions aren't set
+      if (userType === 2 && navItem.moduleName === 'Corporate Management') {
         return true;
       }
       
@@ -346,8 +362,12 @@ export const permissionsService = {
           if (userType === 4 && child.moduleName === 'Amenities Management') {
             return true;
           }
-          // Special handling for userType 4 - show Corporate Management children
+          // Special handling for userType 4 (super admin) - show Corporate Management children
           if (userType === 4 && child.moduleName === 'Corporate Management') {
+            return true;
+          }
+          // Special handling for userType 2 - show Corporate Management children
+          if (userType === 2 && child.moduleName === 'Corporate Management') {
             return true;
           }
           return this.hasPermission(permissions, child.moduleName, 'view');

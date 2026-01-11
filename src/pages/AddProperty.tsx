@@ -29,6 +29,76 @@ import CustomAlert from '../components/CustomAlert';
 import { config } from '../config/env';
 import { amenityService, Amenity } from '../services/amenityService';
 
+// ==================== FONT CONFIGURATION ====================
+// Centralized font settings - modify these to change fonts across the page
+const fontConfig = {
+  fontFamily: "'Poppins', 'Segoe UI', sans-serif",
+  
+  // Page title (main heading)
+  title: {
+    fontSize: '28px',
+    fontWeight: 600,
+  },
+  
+  // Section titles (h5 elements)
+  subtitle: {
+    fontSize: '18px',
+    fontWeight: 600,
+  },
+  
+  // Subsection titles (h6 elements)
+  subsection: {
+    fontSize: '15px',
+    fontWeight: 600,
+  },
+  
+  // Form labels and details
+  details: {
+    fontSize: '14px',
+    fontWeight: 500,
+  },
+  
+  // Helper text / descriptions
+  helper: {
+    fontSize: '13px',
+    fontWeight: 400,
+  },
+};
+
+// Style objects derived from fontConfig
+const fontStyles = {
+  title: {
+    fontFamily: fontConfig.fontFamily,
+    fontSize: fontConfig.title.fontSize,
+    fontWeight: fontConfig.title.fontWeight,
+  } as React.CSSProperties,
+  
+  subtitle: {
+    fontFamily: fontConfig.fontFamily,
+    fontSize: fontConfig.subtitle.fontSize,
+    fontWeight: fontConfig.subtitle.fontWeight,
+  } as React.CSSProperties,
+  
+  subsection: {
+    fontFamily: fontConfig.fontFamily,
+    fontSize: fontConfig.subsection.fontSize,
+    fontWeight: fontConfig.subsection.fontWeight,
+  } as React.CSSProperties,
+  
+  details: {
+    fontFamily: fontConfig.fontFamily,
+    fontSize: fontConfig.details.fontSize,
+    fontWeight: fontConfig.details.fontWeight,
+  } as React.CSSProperties,
+  
+  helper: {
+    fontFamily: fontConfig.fontFamily,
+    fontSize: fontConfig.helper.fontSize,
+    fontWeight: fontConfig.helper.fontWeight,
+  } as React.CSSProperties,
+};
+// =============================================================
+
 interface ProductType {
   id: number;
   name: string;
@@ -325,6 +395,9 @@ const AddProperty = () => {
   const [productSubTypesLoading, setProductSubTypesLoading] = useState(false);
   const [dynamicFields, setDynamicFields] = useState<{[key: string]: string}>({});
   const [dynamicFieldsLoading, setDynamicFieldsLoading] = useState(false);
+  const [brandList, setBrandList] = useState<string[]>([]);
+  const [brandListLoading, setBrandListLoading] = useState(true);
+  const [customBrandName, setCustomBrandName] = useState('');
 
   // Fetch amenities from API
   const fetchAmenities = async () => {
@@ -337,6 +410,30 @@ const AddProperty = () => {
       showAlert('Error', 'Failed to load amenities', 'error');
     } finally {
       setAmenitiesLoading(false);
+    }
+  };
+
+  // Fetch brand list from API
+  const fetchBrandList = async () => {
+    try {
+      setBrandListLoading(true);
+      const response = await fetch('http://35.173.253.61:3000/api/v1/property/brand/list', {
+        method: 'GET'
+      });
+
+      const data = await response.json();
+
+      if (data.status && data.data) {
+        setBrandList(data.data);
+      } else {
+        console.error('Failed to load brand list:', data.message);
+        setBrandList([]);
+      }
+    } catch (error) {
+      console.error('Error fetching brand list:', error);
+      setBrandList([]);
+    } finally {
+      setBrandListLoading(false);
     }
   };
 
@@ -451,6 +548,7 @@ const AddProperty = () => {
   useEffect(() => {
     fetchAmenities();
     fetchProductTypes();
+    fetchBrandList();
   }, []);
 
   const [formData, setFormData] = useState<PropertyFormData>({
@@ -1176,7 +1274,9 @@ const AddProperty = () => {
       formDataToSend.append('subcategoryId', formData.subcategoryId);
       formDataToSend.append('latitude', formData.latitude);
       formDataToSend.append('longitude', formData.longitude);
-      formDataToSend.append('brand', formData.brand_chain_name || formData.brand);
+      // Use custom brand name if 'other' is selected, otherwise use selected brand
+      const brandValue = formData.brand_chain_name === 'other' ? customBrandName : (formData.brand_chain_name || formData.brand);
+      formDataToSend.append('brand', brandValue);
       formDataToSend.append('product_types', formData.product_sub_types || formData.product_types);
       
       // Dynamic Fields
@@ -1595,8 +1695,8 @@ const AddProperty = () => {
               <CIcon icon={cilArrowLeft} />
             </button>
             <div>
-              <h2 className="mb-0">Add New Property</h2>
-              <p className="text-muted mb-0">Add a new property to the system</p>
+              <h2 className="mb-0" style={fontStyles.title}>Add New Property</h2>
+              <p className="text-muted mb-0" style={fontStyles.helper}>Add a new property to the system</p>
             </div>
           </div>
         </div>
@@ -1608,7 +1708,7 @@ const AddProperty = () => {
               {/* New Property Overview Section */}
               <div className="row mb-4">
                 <div className="col-12">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     <CIcon icon={cilStar} className="me-2" />
                     Property Overview
                   </h5>
@@ -1616,7 +1716,7 @@ const AddProperty = () => {
                 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Property Name *</label>
+                    <label className="form-label" style={fontStyles.details}>Property Name *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -1629,30 +1729,51 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Brand/Chain Name</label>
+                    <label className="form-label" style={fontStyles.details}>Brand/Chain Name</label>
                     <select
                       className="form-select"
                       name="brand_chain_name"
                       value={formData.brand_chain_name}
-                      onChange={handleInputChange}
+                      onChange={(e) => {
+                        handleInputChange(e);
+                        // Reset custom brand name when changing selection
+                        if (e.target.value !== 'other') {
+                          setCustomBrandName('');
+                        }
+                      }}
+                      disabled={brandListLoading}
                     >
-                      <option value="">Select Brand/Chain</option>
-                      <option value="WeWork">WeWork</option>
-                      <option value="Regus">Regus</option>
-                      <option value="Awfis">Awfis</option>
-                      <option value="91springboard">91springboard</option>
-                      <option value="Innov8">Innov8</option>
-                      <option value="IndiQube">IndiQube</option>
-                      <option value="Other">Other</option>
+                      <option value="">
+                        {brandListLoading ? 'Loading Brands...' : 'Select Brand/Chain'}
+                      </option>
+                      {brandList.map((brand) => (
+                        <option key={brand} value={brand}>
+                          {brand.charAt(0).toUpperCase() + brand.slice(1)}
+                        </option>
+                      ))}
                     </select>
                   </div>
+                  
+                  {formData.brand_chain_name === 'other' && (
+                    <div className="mb-3">
+                      <label className="form-label" style={fontStyles.details}>Custom Brand Name</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="custom_brand_name"
+                        value={customBrandName}
+                        onChange={(e) => setCustomBrandName(e.target.value)}
+                        placeholder="Enter custom brand name"
+                      />
+                    </div>
+                  )}
 
                   
                 </div>
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Status *</label>
+                    <label className="form-label" style={fontStyles.details}>Status *</label>
                     <select
                       className="form-select"
                       name="status"
@@ -1667,7 +1788,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Listing Type *</label>
+                    <label className="form-label" style={fontStyles.details}>Listing Type *</label>
                     <select
                       className="form-select"
                       name="listing_type"
@@ -1684,7 +1805,7 @@ const AddProperty = () => {
                 </div>
 
                  <div className="col-md-6">
-                        <label className="form-label">Product Types</label>
+                        <label className="form-label" style={fontStyles.details}>Product Types</label>
                         <select
                           className="form-select"
                           name="product_types"
@@ -1702,7 +1823,7 @@ const AddProperty = () => {
                       </div>
 
                        <div className="col-md-6">
-                        <label className="form-label">Product Sub Types</label>
+                        <label className="form-label" style={fontStyles.details}>Product Sub Types</label>
                         <select
                           className="form-select"
                           name="product_sub_types"
@@ -1734,7 +1855,7 @@ const AddProperty = () => {
               {/* Space Information */}
               <div className="row">
                 <div className="col-12">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     <CIcon icon={cilBuilding} className="me-2" />
                     Space Information
                   </h5>
@@ -1745,7 +1866,7 @@ const AddProperty = () => {
                     <div className="col-md-4">
                       
                       <div className="mb-3">
-                        <label className="form-label">Type of Establishment *</label>
+                        <label className="form-label" style={fontStyles.details}>Type of Establishment *</label>
                         <select
                           className="form-select"
                           name="type_of_establishment"
@@ -1763,7 +1884,7 @@ const AddProperty = () => {
                       
 
                       <div className="mb-3">
-                        <label className="form-label">Ownership of Property *</label>
+                        <label className="form-label" style={fontStyles.details}>Ownership of Property *</label>
                         <select
                           className="form-select"
                           name="ownership_of_property"
@@ -1779,7 +1900,7 @@ const AddProperty = () => {
                       </div>
 
                       <div className="mb-3">
-                        <label className="form-label">Working Days *</label>
+                        <label className="form-label" style={fontStyles.details}>Working Days *</label>
                         <input
                           type="text"
                           className="form-control"
@@ -1794,7 +1915,7 @@ const AddProperty = () => {
 
                     <div className="col-md-4">
                       <div className="mb-3">
-                        <label className="form-label">Opening Time *</label>
+                        <label className="form-label" style={fontStyles.details}>Opening Time *</label>
                         <input
                           type="time"
                           className="form-control"
@@ -1806,7 +1927,7 @@ const AddProperty = () => {
                       </div>
 
                       <div className="mb-3">
-                        <label className="form-label">Internet Type *</label>
+                        <label className="form-label" style={fontStyles.details}>Internet Type *</label>
                         <select
                           className="form-select"
                           name="internet_type"
@@ -1824,7 +1945,7 @@ const AddProperty = () => {
                      
 
                       <div className="mb-3">
-                        <label className="form-label">Area in Sq Ft *</label>
+                        <label className="form-label" style={fontStyles.details}>Area in Sq Ft *</label>
                         <input
                           type="number"
                           className="form-control"
@@ -1838,7 +1959,7 @@ const AddProperty = () => {
 
                     <div className="col-md-4">
                       <div className="mb-3">
-                        <label className="form-label">Pictures of the Space</label>
+                        <label className="form-label" style={fontStyles.details}>Pictures of the Space</label>
                         <input
                           type="file"
                           className="form-control"
@@ -1854,7 +1975,7 @@ const AddProperty = () => {
                   {Object.keys(dynamicFields).length > 0 && (
                     <div className="row mt-4">
                       <div className="col-12">
-                        <h6 className="mb-3">
+                        <h6 className="mb-3" style={fontStyles.subsection}>
                           <CIcon icon={cilChart} className="me-2" />
                           Dynamic Fields {dynamicFieldsLoading && <span className="text-muted">(Loading...)</span>}
                         </h6>
@@ -1868,7 +1989,7 @@ const AddProperty = () => {
                           return (
                             <div key={key} className="col-lg-4 col-md-6">
                               <div className="mb-3">
-                                <label className="form-label">{fieldLabel}</label>
+                                <label className="form-label" style={fontStyles.details}>{fieldLabel}</label>
                                 <input
                                   type={key.includes('percentage') || key.includes('capacity') || key.includes('sqft') || key.includes('unit') || key.includes('months') ? 'number' : 'text'}
                                   className="form-control"
@@ -1888,7 +2009,7 @@ const AddProperty = () => {
                   {/* Space Configuration Section */}
                   <div className="row mt-4">
                     <div className="col-12">
-                      <h6 className="mb-3">
+                      <h6 className="mb-3" style={fontStyles.subsection}>
                         <CIcon icon={cilSettings} className="me-2" />
                         Space Configuration (Dynamic)
                       </h6>
@@ -1897,7 +2018,7 @@ const AddProperty = () => {
                     {/* Basic Capacity */}
                     <div className="col-lg-4 col-md-6">
                       <div className="mb-3">
-                        <label className="form-label">Total Capacity (Seats) *</label>
+                        <label className="form-label" style={fontStyles.details}>Total Capacity (Seats) *</label>
                         <input
                           type="number"
                           className="form-control"
@@ -1911,7 +2032,7 @@ const AddProperty = () => {
                     
                     <div className="col-lg-4 col-md-6">
                       <div className="mb-3">
-                        <label className="form-label">Available Seats (Live availability)</label>
+                        <label className="form-label" style={fontStyles.details}>Available Seats (Live availability)</label>
                         <input
                           type="number"
                           className="form-control"
@@ -1924,7 +2045,7 @@ const AddProperty = () => {
 
                     <div className="col-lg-4 col-md-12">
                       <div className="mb-3">
-                        <label className="form-label">Space Utilization</label>
+                        <label className="form-label" style={fontStyles.details}>Space Utilization</label>
                         <div className="form-text text-muted">
                           {formData.total_capacity && formData.available_seats ? 
                             `${Math.round((parseInt(formData.available_seats) / parseInt(formData.total_capacity)) * 100)}% Available` : 
@@ -1936,7 +2057,7 @@ const AddProperty = () => {
 
                                          {/* Types of Spaces */}
                      <div className="col-12 mt-3">
-                       <h6 className="mb-3 text-primary">Types of Spaces Available</h6>
+                       <h6 className="mb-3 text-primary" style={fontStyles.subsection}>Types of Spaces Available</h6>
                        
                        <div className="row">
                          {/* Hot Desk */}
@@ -1957,7 +2078,7 @@ const AddProperty = () => {
                                </div>
                                {formData.space_types.hot_desk.enabled && (
                                  <div>
-                                   <label className="form-label">Flexible Seats Count</label>
+                                   <label className="form-label" style={fontStyles.details}>Flexible Seats Count</label>
                                    <input
                                      type="number"
                                      className="form-control"
@@ -1988,7 +2109,7 @@ const AddProperty = () => {
                                </div>
                                {formData.space_types.dedicated_desk.enabled && (
                                  <div>
-                                   <label className="form-label">Desk Count</label>
+                                   <label className="form-label" style={fontStyles.details}>Desk Count</label>
                                    <input
                                      type="number"
                                      className="form-control"
@@ -2020,7 +2141,7 @@ const AddProperty = () => {
                                {formData.space_types.private_cabin.enabled && (
                                  <div>
                                    <div className="mb-2">
-                                     <label className="form-label">Capacity per Cabin</label>
+                                     <label className="form-label" style={fontStyles.details}>Capacity per Cabin</label>
                                      <input
                                        type="number"
                                        className="form-control"
@@ -2029,7 +2150,7 @@ const AddProperty = () => {
                                      />
                                    </div>
                                    <div>
-                                     <label className="form-label">Number of Cabins</label>
+                                     <label className="form-label" style={fontStyles.details}>Number of Cabins</label>
                                      <input
                                        type="number"
                                        className="form-control"
@@ -2059,29 +2180,19 @@ const AddProperty = () => {
                                    Conference Room
                                  </label>
                                </div>
-                               {formData.space_types.conference_room.enabled && (
-                                 <div>
-                                   <div className="mb-2">
-                                     <label className="form-label">Capacity</label>
-                                     <input
-                                       type="number"
-                                       className="form-control"
-                                       value={formData.space_types.conference_room.capacity}
-                                       onChange={(e) => handleSpaceConfigChange('conference_room', 'capacity', e.target.value)}
-                                     />
-                                   </div>
-                                   <div>
-                                     <label className="form-label">Pricing</label>
-                                     <input
-                                       type="text"
-                                       className="form-control"
-                                       value={formData.space_types.conference_room.pricing}
-                                       onChange={(e) => handleSpaceConfigChange('conference_room', 'pricing', e.target.value)}
-                                       placeholder="₹500/hour"
-                                     />
-                                   </div>
-                                 </div>
-                               )}
+                              {formData.space_types.conference_room.enabled && (
+                                <div>
+                                  <div className="mb-2">
+                                    <label className="form-label" style={fontStyles.details}>Capacity</label>
+                                    <input
+                                      type="number"
+                                      className="form-control"
+                                      value={formData.space_types.conference_room.capacity}
+                                      onChange={(e) => handleSpaceConfigChange('conference_room', 'capacity', e.target.value)}
+                                    />
+                                  </div>
+                                </div>
+                              )}
                              </div>
                            </div>
                          </div>
@@ -2102,29 +2213,19 @@ const AddProperty = () => {
                                    Event Space
                                  </label>
                                </div>
-                               {formData.space_types.event_space.enabled && (
-                                 <div>
-                                   <div className="mb-2">
-                                     <label className="form-label">Capacity</label>
-                                     <input
-                                       type="number"
-                                       className="form-control"
-                                       value={formData.space_types.event_space.capacity}
-                                       onChange={(e) => handleSpaceConfigChange('event_space', 'capacity', e.target.value)}
-                                     />
-                                   </div>
-                                   <div>
-                                     <label className="form-label">Pricing</label>
-                                     <input
-                                       type="text"
-                                       className="form-control"
-                                       value={formData.space_types.event_space.pricing}
-                                       onChange={(e) => handleSpaceConfigChange('event_space', 'pricing', e.target.value)}
-                                       placeholder="₹10000/day"
-                                     />
-                                   </div>
-                                 </div>
-                               )}
+                              {formData.space_types.event_space.enabled && (
+                                <div>
+                                  <div className="mb-2">
+                                    <label className="form-label" style={fontStyles.details}>Capacity</label>
+                                    <input
+                                      type="number"
+                                      className="form-control"
+                                      value={formData.space_types.event_space.capacity}
+                                      onChange={(e) => handleSpaceConfigChange('event_space', 'capacity', e.target.value)}
+                                    />
+                                  </div>
+                                </div>
+                              )}
                              </div>
                            </div>
                          </div>
@@ -2207,7 +2308,7 @@ const AddProperty = () => {
                                </div>
                                {formData.space_types.enterprise_solutions.enabled && (
                                  <div>
-                                   <label className="form-label">Description</label>
+                                   <label className="form-label" style={fontStyles.details}>Description</label>
                                    <textarea
                                      className="form-control"
                                      rows={2}
@@ -2244,7 +2345,7 @@ const AddProperty = () => {
                                    {formData.space_types.meeting_room.rooms.map((room, index) => (
                                      <div key={index} className="row mb-3 border rounded p-3">
                                        <div className="col-md-3">
-                                         <label className="form-label">Room Name</label>
+                                         <label className="form-label" style={fontStyles.details}>Room Name</label>
                                          <input
                                            type="text"
                                            className="form-control"
@@ -2253,7 +2354,7 @@ const AddProperty = () => {
                                          />
                                        </div>
                                        <div className="col-md-2">
-                                         <label className="form-label">Capacity</label>
+                                         <label className="form-label" style={fontStyles.details}>Capacity</label>
                                          <input
                                            type="number"
                                            className="form-control"
@@ -2262,7 +2363,7 @@ const AddProperty = () => {
                                          />
                                        </div>
                                        <div className="col-md-3">
-                                         <label className="form-label">Hourly Price</label>
+                                         <label className="form-label" style={fontStyles.details}>Hourly Price</label>
                                          <input
                                            type="number"
                                            className="form-control"
@@ -2271,7 +2372,7 @@ const AddProperty = () => {
                                          />
                                        </div>
                                        <div className="col-md-3">
-                                         <label className="form-label">Daily Price</label>
+                                         <label className="form-label" style={fontStyles.details}>Daily Price</label>
                                          <input
                                            type="number"
                                            className="form-control"
@@ -2308,7 +2409,7 @@ const AddProperty = () => {
                        {/* Pricing Configuration Section */}
                        <div className="row mt-4">
                          <div className="col-12">
-                           <h6 className="mb-3">
+                           <h6 className="mb-3" style={fontStyles.subsection}>
                              <CIcon icon={cilCreditCard} className="me-2" />
                              Pricing (Dynamic)
                            </h6>
@@ -2333,7 +2434,7 @@ const AddProperty = () => {
                                  </div>
                                  {formData.pricing_options.day_pass.enabled && (
                                    <div>
-                                     <label className="form-label">Price per seat/day</label>
+                                     <label className="form-label" style={fontStyles.details}>Price per seat/day</label>
                                      <input
                                        type="number"
                                        className="form-control"
@@ -2365,7 +2466,7 @@ const AddProperty = () => {
                                  </div>
                                  {formData.pricing_options.weekly_pass.enabled && (
                                    <div>
-                                     <label className="form-label">Price per seat/week</label>
+                                     <label className="form-label" style={fontStyles.details}>Price per seat/week</label>
                                      <input
                                        type="number"
                                        className="form-control"
@@ -2397,7 +2498,7 @@ const AddProperty = () => {
                                  </div>
                                  {formData.pricing_options.monthly_hot_desk.enabled && (
                                    <div>
-                                     <label className="form-label">Price per seat/month</label>
+                                     <label className="form-label" style={fontStyles.details}>Price per seat/month</label>
                                      <input
                                        type="number"
                                        className="form-control"
@@ -2429,7 +2530,7 @@ const AddProperty = () => {
                                  </div>
                                  {formData.pricing_options.monthly_dedicated_desk.enabled && (
                                    <div>
-                                     <label className="form-label">Price per seat/month</label>
+                                     <label className="form-label" style={fontStyles.details}>Price per seat/month</label>
                                      <input
                                        type="number"
                                        className="form-control"
@@ -2464,7 +2565,7 @@ const AddProperty = () => {
                                  {formData.pricing_options.conference_rooms_pricing.enabled && (
                                    <div>
                                      <div className="mb-2">
-                                       <label className="form-label">Capacity</label>
+                                       <label className="form-label" style={fontStyles.details}>Capacity</label>
                                        <input
                                          type="number"
                                          className="form-control"
@@ -2473,7 +2574,7 @@ const AddProperty = () => {
                                        />
                                      </div>
                                      <div className="mb-2">
-                                       <label className="form-label">Price/hour</label>
+                                       <label className="form-label" style={fontStyles.details}>Price/hour</label>
                                        <input
                                          type="number"
                                          className="form-control"
@@ -2483,7 +2584,7 @@ const AddProperty = () => {
                                        />
                                      </div>
                                      <div>
-                                       <label className="form-label">Price/day</label>
+                                       <label className="form-label" style={fontStyles.details}>Price/day</label>
                                        <input
                                          type="number"
                                          className="form-control"
@@ -2517,7 +2618,7 @@ const AddProperty = () => {
                                  {formData.pricing_options.event_space_pricing.enabled && (
                                    <div>
                                      <div className="mb-2">
-                                       <label className="form-label">Capacity</label>
+                                       <label className="form-label" style={fontStyles.details}>Capacity</label>
                                        <input
                                          type="number"
                                          className="form-control"
@@ -2526,7 +2627,7 @@ const AddProperty = () => {
                                        />
                                      </div>
                                      <div className="mb-2">
-                                       <label className="form-label">Price/hour</label>
+                                       <label className="form-label" style={fontStyles.details}>Price/hour</label>
                                        <input
                                          type="number"
                                          className="form-control"
@@ -2536,7 +2637,7 @@ const AddProperty = () => {
                                        />
                                      </div>
                                      <div>
-                                       <label className="form-label">Price/day</label>
+                                       <label className="form-label" style={fontStyles.details}>Price/day</label>
                                        <input
                                          type="number"
                                          className="form-control"
@@ -2570,7 +2671,7 @@ const AddProperty = () => {
                                  {formData.pricing_options.virtual_office_plans.enabled && (
                                    <div>
                                      <div className="mb-2">
-                                       <label className="form-label">Business Address</label>
+                                       <label className="form-label" style={fontStyles.details}>Business Address</label>
                                        <input
                                          type="number"
                                          className="form-control"
@@ -2580,7 +2681,7 @@ const AddProperty = () => {
                                        />
                                      </div>
                                      <div className="mb-2">
-                                       <label className="form-label">Mail Handling</label>
+                                       <label className="form-label" style={fontStyles.details}>Mail Handling</label>
                                        <input
                                          type="number"
                                          className="form-control"
@@ -2590,7 +2691,7 @@ const AddProperty = () => {
                                        />
                                      </div>
                                      <div className="mb-2">
-                                       <label className="form-label">GST Registration</label>
+                                       <label className="form-label" style={fontStyles.details}>GST Registration</label>
                                        <input
                                          type="number"
                                          className="form-control"
@@ -2600,7 +2701,7 @@ const AddProperty = () => {
                                        />
                                      </div>
                                      <div>
-                                       <label className="form-label">Combined Price</label>
+                                       <label className="form-label" style={fontStyles.details}>Combined Price</label>
                                        <input
                                          type="number"
                                          className="form-control"
@@ -2634,7 +2735,7 @@ const AddProperty = () => {
                                  {formData.pricing_options.enterprise_deals.enabled && (
                                    <div>
                                      <div className="mb-2">
-                                       <label className="form-label">Custom Quote</label>
+                                       <label className="form-label" style={fontStyles.details}>Custom Quote</label>
                                        <textarea
                                          className="form-control"
                                          rows={2}
@@ -2644,7 +2745,7 @@ const AddProperty = () => {
                                        />
                                      </div>
                                      <div>
-                                       <label className="form-label">Attach Brochure</label>
+                                       <label className="form-label" style={fontStyles.details}>Attach Brochure</label>
                                        <input
                                          type="file"
                                          className="form-control"
@@ -2681,7 +2782,7 @@ const AddProperty = () => {
                                      {formData.pricing_options.private_cabins_pricing.plans.map((plan, index) => (
                                        <div key={index} className="row mb-3 border rounded p-3">
                                          <div className="col-md-5">
-                                           <label className="form-label">Capacity</label>
+                                           <label className="form-label" style={fontStyles.details}>Capacity</label>
                                            <input
                                              type="number"
                                              className="form-control"
@@ -2690,7 +2791,7 @@ const AddProperty = () => {
                                            />
                                          </div>
                                          <div className="col-md-5">
-                                           <label className="form-label">Price per month</label>
+                                           <label className="form-label" style={fontStyles.details}>Price per month</label>
                                            <input
                                              type="number"
                                              className="form-control"
@@ -2746,7 +2847,7 @@ const AddProperty = () => {
                                      {formData.pricing_options.meeting_rooms_pricing.rooms.map((room, index) => (
                                        <div key={index} className="row mb-3 border rounded p-3">
                                          <div className="col-md-3">
-                                           <label className="form-label">Room Name</label>
+                                           <label className="form-label" style={fontStyles.details}>Room Name</label>
                                            <input
                                              type="text"
                                              className="form-control"
@@ -2755,7 +2856,7 @@ const AddProperty = () => {
                                            />
                                          </div>
                                          <div className="col-md-2">
-                                           <label className="form-label">Capacity</label>
+                                           <label className="form-label" style={fontStyles.details}>Capacity</label>
                                            <input
                                              type="number"
                                              className="form-control"
@@ -2764,7 +2865,7 @@ const AddProperty = () => {
                                            />
                                          </div>
                                          <div className="col-md-3">
-                                           <label className="form-label">Price per hour</label>
+                                           <label className="form-label" style={fontStyles.details}>Price per hour</label>
                                            <input
                                              type="number"
                                              className="form-control"
@@ -2773,7 +2874,7 @@ const AddProperty = () => {
                                            />
                                          </div>
                                          <div className="col-md-3">
-                                           <label className="form-label">Price per day</label>
+                                           <label className="form-label" style={fontStyles.details}>Price per day</label>
                                            <input
                                              type="number"
                                              className="form-control"
@@ -2812,7 +2913,7 @@ const AddProperty = () => {
 
                   <div className="row mt-3">
                     <div className="col-12">
-                      <h6 className="mb-3">
+                      <h6 className="mb-3" style={fontStyles.subsection}>
                         <CIcon icon={cilStar} className="me-2" />
                         Additional Features
                       </h6>
@@ -2872,13 +2973,13 @@ const AddProperty = () => {
               {/* Property Details
               <div className="row">
                 <div className="col-md-6">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     <CIcon icon={cilHome} className="me-2" />
                     Property Details
                   </h5>
                   
                   <div className="mb-3">
-                    <label className="form-label">Area in Sq Ft *</label>
+                    <label className="form-label" style={fontStyles.details}>Area in Sq Ft *</label>
                     <input
                       type="number"
                       className="form-control"
@@ -2896,7 +2997,7 @@ const AddProperty = () => {
               {/* Dynamic Amenities & Facilities */}
               <div className="row mb-4">
                 <div className="col-12">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     <CIcon icon={cilSettings} className="me-2" />
                     Amenities & Facilities
                   </h5>
@@ -2930,7 +3031,7 @@ const AddProperty = () => {
 
                       return (
                         <div key={category} className="col-md-6 mb-4">
-                          <h6 className="mb-3 text-primary">
+                          <h6 className="mb-3 text-primary" style={fontStyles.subsection}>
                             <CIcon icon={getCategoryIcon(category)} className="me-2" />
                             {category}
                           </h6>
@@ -2973,7 +3074,7 @@ const AddProperty = () => {
                 {/* Location Details */}
               <div className="row mb-4">
                 <div className="col-12">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     <CIcon icon={cilLocationPin} className="me-2" />
                     Location Details
                   </h5>
@@ -2981,7 +3082,7 @@ const AddProperty = () => {
                 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Country *</label>
+                    <label className="form-label" style={fontStyles.details}>Country *</label>
                     <select
                       className="form-select"
                       name="country"
@@ -3002,7 +3103,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">State/Region *</label>
+                    <label className="form-label" style={fontStyles.details}>State/Region *</label>
                     <select
                       className="form-select"
                       name="state_region"
@@ -3011,21 +3112,51 @@ const AddProperty = () => {
                       required
                     >
                       <option value="">Select State/Region</option>
-                      <option value="Delhi">Delhi</option>
-                      <option value="Mumbai">Mumbai</option>
-                      <option value="Bangalore">Bangalore</option>
-                      <option value="Chennai">Chennai</option>
-                      <option value="Kolkata">Kolkata</option>
-                      <option value="Hyderabad">Hyderabad</option>
-                      <option value="Pune">Pune</option>
-                      <option value="Gurgaon">Gurgaon</option>
-                      <option value="Noida">Noida</option>
-                      <option value="Other">Other</option>
+                      <optgroup label="States">
+                        <option value="Andhra Pradesh">Andhra Pradesh</option>
+                        <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                        <option value="Assam">Assam</option>
+                        <option value="Bihar">Bihar</option>
+                        <option value="Chhattisgarh">Chhattisgarh</option>
+                        <option value="Goa">Goa</option>
+                        <option value="Gujarat">Gujarat</option>
+                        <option value="Haryana">Haryana</option>
+                        <option value="Himachal Pradesh">Himachal Pradesh</option>
+                        <option value="Jharkhand">Jharkhand</option>
+                        <option value="Karnataka">Karnataka</option>
+                        <option value="Kerala">Kerala</option>
+                        <option value="Madhya Pradesh">Madhya Pradesh</option>
+                        <option value="Maharashtra">Maharashtra</option>
+                        <option value="Manipur">Manipur</option>
+                        <option value="Meghalaya">Meghalaya</option>
+                        <option value="Mizoram">Mizoram</option>
+                        <option value="Nagaland">Nagaland</option>
+                        <option value="Odisha">Odisha</option>
+                        <option value="Punjab">Punjab</option>
+                        <option value="Rajasthan">Rajasthan</option>
+                        <option value="Sikkim">Sikkim</option>
+                        <option value="Tamil Nadu">Tamil Nadu</option>
+                        <option value="Telangana">Telangana</option>
+                        <option value="Tripura">Tripura</option>
+                        <option value="Uttar Pradesh">Uttar Pradesh</option>
+                        <option value="Uttarakhand">Uttarakhand</option>
+                        <option value="West Bengal">West Bengal</option>
+                      </optgroup>
+                      <optgroup label="Union Territories">
+                        <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                        <option value="Chandigarh">Chandigarh</option>
+                        <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                        <option value="Ladakh">Ladakh</option>
+                        <option value="Lakshadweep">Lakshadweep</option>
+                        <option value="Puducherry">Puducherry</option>
+                      </optgroup>
                     </select>
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">City *</label>
+                    <label className="form-label" style={fontStyles.details}>City *</label>
                     <select
                       className="form-select"
                       name="city"
@@ -3048,7 +3179,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Locality / Micro-market *</label>
+                    <label className="form-label" style={fontStyles.details}>Locality / Micro-market *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -3063,7 +3194,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Full Address *</label>
+                    <label className="form-label" style={fontStyles.details}>Full Address *</label>
                     <textarea
                       className="form-control"
                       name="full_address"
@@ -3076,7 +3207,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Pincode/Zip Code *</label>
+                    <label className="form-label" style={fontStyles.details}>Pincode/Zip Code *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -3092,14 +3223,14 @@ const AddProperty = () => {
 
               <div className="row mb-4">
                 <div className="col-12">
-                  <h6 className="mb-3">
+                  <h6 className="mb-3" style={fontStyles.subsection}>
                     <CIcon icon={cilMap} className="me-2" />
                     Google Map Coordinates
                   </h6>
                   <div className="row">
                     <div className="col-md-6">
                       <div className="mb-3">
-                        <label className="form-label">Latitude *</label>
+                        <label className="form-label" style={fontStyles.details}>Latitude *</label>
                         <input
                           type="number"
                           step="any"
@@ -3114,7 +3245,7 @@ const AddProperty = () => {
                     </div>
                     <div className="col-md-6">
                       <div className="mb-3">
-                        <label className="form-label">Longitude *</label>
+                        <label className="form-label" style={fontStyles.details}>Longitude *</label>
                         <input
                           type="number"
                           step="any"
@@ -3139,7 +3270,7 @@ const AddProperty = () => {
 
               <div className="row mb-4">
                 <div className="col-12">
-                  <h6 className="mb-3">
+                  <h6 className="mb-3" style={fontStyles.subsection}>
                     <CIcon icon={cilLocationPin} className="me-2" />
                     Metro Connectivity Details
                   </h6>
@@ -3147,7 +3278,7 @@ const AddProperty = () => {
                   {formData.connectivity.map((item, index) => (
                     <div key={index} className="row mb-3 border rounded p-3">
                       <div className="col-md-4">
-                        <label className="form-label">Station Name</label>
+                        <label className="form-label" style={fontStyles.details}>Station Name</label>
                         <input
                           type="text"
                           className="form-control"
@@ -3156,7 +3287,7 @@ const AddProperty = () => {
                         />
                       </div>
                       <div className="col-md-4">
-                        <label className="form-label">Metro Line</label>
+                        <label className="form-label" style={fontStyles.details}>Metro Line</label>
                         <input
                           type="text"
                           className="form-control"
@@ -3165,7 +3296,7 @@ const AddProperty = () => {
                         />
                       </div>
                       <div className="col-md-3">
-                        <label className="form-label">Distance (m)</label>
+                        <label className="form-label" style={fontStyles.details}>Distance (m)</label>
                         <input
                           type="number"
                           className="form-control"
@@ -3201,13 +3332,13 @@ const AddProperty = () => {
                {/* Property Owner / Operator Details */}
                <div className="row">
                 <div className="col-md-6">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     <CIcon icon={cilUser} className="me-2" />
                     Property Owner / Operator Details
                   </h5>
                   
                   <div className="mb-3">
-                    <label className="form-label">Operator/Owner Company Name *</label>
+                    <label className="form-label" style={fontStyles.details}>Operator/Owner Company Name *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -3220,7 +3351,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Contact Person (Onsite Manager) *</label>
+                    <label className="form-label" style={fontStyles.details}>Contact Person (Onsite Manager) *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -3233,7 +3364,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Designation *</label>
+                    <label className="form-label" style={fontStyles.details}>Designation *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -3246,7 +3377,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Contact Number *</label>
+                    <label className="form-label" style={fontStyles.details}>Contact Number *</label>
                     <input
                       type="tel"
                       className="form-control"
@@ -3260,13 +3391,13 @@ const AddProperty = () => {
                 </div>
 
                 <div className="col-md-6">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     <CIcon icon={cilEnvelopeOpen} className="me-2" />
                     Contact & Support Information
                   </h5>
                   
                   <div className="mb-3">
-                    <label className="form-label">Email Address *</label>
+                    <label className="form-label" style={fontStyles.details}>Email Address *</label>
                     <input
                       type="email"
                       className="form-control"
@@ -3279,7 +3410,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Website / Booking Link</label>
+                    <label className="form-label" style={fontStyles.details}>Website / Booking Link</label>
                     <input
                       type="url"
                       className="form-control"
@@ -3291,7 +3422,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Support Contact (24/7 Helpline)</label>
+                    <label className="form-label" style={fontStyles.details}>Support Contact (24/7 Helpline)</label>
                     <input
                       type="tel"
                       className="form-control"
@@ -3309,7 +3440,7 @@ const AddProperty = () => {
               {/* Furnishing Type */}
               <div className="row mb-4">
                 <div className="col-12">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     <CIcon icon={cilSettings} className="me-2" />
                     Furnishing Type
                   </h5>
@@ -3401,7 +3532,7 @@ const AddProperty = () => {
               {/* Space & Layout Details */}
               <div className="row mb-4">
                 <div className="col-12">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     <CIcon icon={cilChart} className="me-2" />
                     Space & Layout Details
                   </h5>
@@ -3411,7 +3542,7 @@ const AddProperty = () => {
                 {/* Area Details */}
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Total Built-up Area (sq. ft.)</label>
+                    <label className="form-label" style={fontStyles.details}>Total Built-up Area (sq. ft.)</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3424,7 +3555,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Carpet Area (sq. ft.)</label>
+                    <label className="form-label" style={fontStyles.details}>Carpet Area (sq. ft.)</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3437,7 +3568,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Super Built-up Area (sq. ft.)</label>
+                    <label className="form-label" style={fontStyles.details}>Super Built-up Area (sq. ft.)</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3450,7 +3581,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Available Space Area (sq. ft.)</label>
+                    <label className="form-label" style={fontStyles.details}>Available Space Area (sq. ft.)</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3464,7 +3595,7 @@ const AddProperty = () => {
                 {/* Building Details */}
                 <div className="col-md-4">
                   <div className="mb-3">
-                    <label className="form-label">Number of Floors in Building</label>
+                    <label className="form-label" style={fontStyles.details}>Number of Floors in Building</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3477,7 +3608,7 @@ const AddProperty = () => {
 
                 <div className="col-md-4">
                   <div className="mb-3">
-                    <label className="form-label">Floor Number of Available Unit</label>
+                    <label className="form-label" style={fontStyles.details}>Available Unit Floor</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3490,7 +3621,7 @@ const AddProperty = () => {
 
                 <div className="col-md-4">
                   <div className="mb-3">
-                    <label className="form-label">Floor Plate Size (sq. ft.)</label>
+                    <label className="form-label" style={fontStyles.details}>Floor Plate Size (sq. ft.)</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3504,7 +3635,7 @@ const AddProperty = () => {
                 {/* Seating & Distribution */}
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Seating Capacity (Workstations)</label>
+                    <label className="form-label" style={fontStyles.details}>Seating Capacity (Workstations)</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3517,7 +3648,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Height from Floor to Ceiling (ft.)</label>
+                    <label className="form-label" style={fontStyles.details}>Height from Floor to Ceiling (ft.)</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3530,12 +3661,12 @@ const AddProperty = () => {
 
                 {/* Distribution */}
                 <div className="col-12">
-                  <h6 className="mb-3 mt-2">Cabin / Conference Room / Workstation Distribution</h6>
+                  <h6 className="mb-3 mt-2" style={fontStyles.subsection}>Cabin / Conference Room / Workstation Distribution</h6>
                 </div>
 
                 <div className="col-md-4">
                   <div className="mb-3">
-                    <label className="form-label">Cabins</label>
+                    <label className="form-label" style={fontStyles.details}>Cabins</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3548,7 +3679,7 @@ const AddProperty = () => {
 
                 <div className="col-md-4">
                   <div className="mb-3">
-                    <label className="form-label">Conference Rooms</label>
+                    <label className="form-label" style={fontStyles.details}>Conference Rooms</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3561,7 +3692,7 @@ const AddProperty = () => {
 
                 <div className="col-md-4">
                   <div className="mb-3">
-                    <label className="form-label">Workstations</label>
+                    <label className="form-label" style={fontStyles.details}>Workstations</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3574,12 +3705,12 @@ const AddProperty = () => {
 
                 {/* Washrooms */}
                 <div className="col-12">
-                  <h6 className="mb-3 mt-2">Washrooms</h6>
+                  <h6 className="mb-3 mt-2" style={fontStyles.subsection}>Washrooms</h6>
                 </div>
 
                 <div className="col-md-4">
                   <div className="mb-3">
-                    <label className="form-label">Male</label>
+                    <label className="form-label" style={fontStyles.details}>Male</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3592,7 +3723,7 @@ const AddProperty = () => {
 
                 <div className="col-md-4">
                   <div className="mb-3">
-                    <label className="form-label">Female</label>
+                    <label className="form-label" style={fontStyles.details}>Female</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3605,7 +3736,7 @@ const AddProperty = () => {
 
                 <div className="col-md-4">
                   <div className="mb-3">
-                    <label className="form-label">Unisex</label>
+                    <label className="form-label" style={fontStyles.details}>Unisex</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3619,7 +3750,7 @@ const AddProperty = () => {
                 {/* Availability Date */}
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Availability Date</label>
+                    <label className="form-label" style={fontStyles.details}>Availability Date</label>
                     <input
                       type="date"
                       className="form-control"
@@ -3635,7 +3766,7 @@ const AddProperty = () => {
               {/* Building & Project Details */}
               <div className="row mb-4">
                 <div className="col-12">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     <CIcon icon={cilBuilding} className="me-2" />
                     Building & Project Details
                   </h5>
@@ -3645,7 +3776,7 @@ const AddProperty = () => {
                 {/* Building Name & Developer */}
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Building Name / Project Name</label>
+                    <label className="form-label" style={fontStyles.details}>Building Name / Project Name</label>
                     <input
                       type="text"
                       className="form-control"
@@ -3658,7 +3789,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Developer / Owner</label>
+                    <label className="form-label" style={fontStyles.details}>Developer / Owner</label>
                     <input
                       type="text"
                       className="form-control"
@@ -3672,7 +3803,7 @@ const AddProperty = () => {
                 {/* Building Age & Type */}
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Building Age (in years)</label>
+                    <label className="form-label" style={fontStyles.details}>Building Age (in years)</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3685,7 +3816,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Building Type</label>
+                    <label className="form-label" style={fontStyles.details}>Building Type</label>
                     <select
                       className="form-select"
                       value={formData.building_project_details.building_type}
@@ -3705,7 +3836,7 @@ const AddProperty = () => {
                 {/* Total Floors & Basement */}
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Total Number of Floors</label>
+                    <label className="form-label" style={fontStyles.details}>Total Number of Floors</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3718,7 +3849,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Basement Availability</label>
+                    <label className="form-label" style={fontStyles.details}>Basement Availability</label>
                     <select
                       className="form-select"
                       value={formData.building_project_details.basement_available}
@@ -3734,7 +3865,7 @@ const AddProperty = () => {
                 {/* Power Details */}
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Power Load Available (Total KVA)</label>
+                    <label className="form-label" style={fontStyles.details}>Power Load Available (Total KVA)</label>
                     <input
                       type="number"
                       className="form-control"
@@ -3747,7 +3878,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Power Availability per sq. ft. (KVA/sq. ft.)</label>
+                    <label className="form-label" style={fontStyles.details}>Power Availability per sq. ft. (KVA/sq. ft.)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -3762,7 +3893,7 @@ const AddProperty = () => {
                 {/* Car Parking & Compliance */}
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Car Parking Ratio</label>
+                    <label className="form-label" style={fontStyles.details}>Car Parking Ratio</label>
                     <input
                       type="text"
                       className="form-control"
@@ -3775,7 +3906,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">NBC (National Building Code) Compliance</label>
+                    <label className="form-label" style={fontStyles.details}>NBC (National Building Code) Compliance</label>
                     <select
                       className="form-select"
                       value={formData.building_project_details.nbc_compliance}
@@ -3792,7 +3923,7 @@ const AddProperty = () => {
                 {/* SEZ Status */}
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">SEZ / Non-SEZ</label>
+                    <label className="form-label" style={fontStyles.details}>SEZ / Non-SEZ</label>
                     <select
                       className="form-select"
                       value={formData.building_project_details.sez_status}
@@ -3811,7 +3942,7 @@ const AddProperty = () => {
               {/* Health, Safety & Wellness */}
               <div className="row mb-4">
                 <div className="col-12">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     ❤️ Health, Safety & Wellness
                   </h5>
                   <p className="text-muted small mb-3">All fields in this section are optional</p>
@@ -3819,7 +3950,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Emergency Exits & Signages</label>
+                    <label className="form-label" style={fontStyles.details}>Emergency Exits & Signages</label>
                     <select
                       className="form-select"
                       value={formData.health_safety.emergency_exits_signages}
@@ -3834,7 +3965,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Indoor Air Quality Monitoring</label>
+                    <label className="form-label" style={fontStyles.details}>Indoor Air Quality Monitoring</label>
                     <select
                       className="form-select"
                       value={formData.health_safety.indoor_air_quality}
@@ -3849,7 +3980,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Natural Ventilation / Daylighting</label>
+                    <label className="form-label" style={fontStyles.details}>Natural Ventilation / Daylighting</label>
                     <select
                       className="form-select"
                       value={formData.health_safety.natural_ventilation}
@@ -3864,7 +3995,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">First Aid Room / Wellness Room</label>
+                    <label className="form-label" style={fontStyles.details}>First Aid Room / Wellness Room</label>
                     <select
                       className="form-select"
                       value={formData.health_safety.first_aid_wellness_room}
@@ -3879,7 +4010,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Covid-Compliant Protocols</label>
+                    <label className="form-label" style={fontStyles.details}>Covid-Compliant Protocols</label>
                     <select
                       className="form-select"
                       value={formData.health_safety.covid_compliant}
@@ -3894,7 +4025,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Fire Exits and Assembly Area</label>
+                    <label className="form-label" style={fontStyles.details}>Fire Exits and Assembly Area</label>
                     <select
                       className="form-select"
                       value={formData.health_safety.fire_exits_assembly}
@@ -3909,7 +4040,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Ergonomic Seating Setup</label>
+                    <label className="form-label" style={fontStyles.details}>Ergonomic Seating Setup</label>
                     <select
                       className="form-select"
                       value={formData.health_safety.ergonomic_seating}
@@ -3924,7 +4055,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Accessibility for Differently Abled</label>
+                    <label className="form-label" style={fontStyles.details}>Accessibility for Differently Abled</label>
                     <input
                       type="text"
                       className="form-control"
@@ -3941,7 +4072,7 @@ const AddProperty = () => {
               {/* Sustainability & Utilities */}
               <div className="row mb-4">
                 <div className="col-12">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     🌱 Sustainability & Utilities
                   </h5>
                   <p className="text-muted small mb-3">All fields in this section are optional</p>
@@ -3949,7 +4080,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Source of Water Supply</label>
+                    <label className="form-label" style={fontStyles.details}>Source of Water Supply</label>
                     <select
                       className="form-select"
                       value={formData.sustainability.water_supply_source}
@@ -3966,7 +4097,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Sewage Treatment Plant (STP)</label>
+                    <label className="form-label" style={fontStyles.details}>Sewage Treatment Plant (STP)</label>
                     <select
                       className="form-select"
                       value={formData.sustainability.stp_available}
@@ -3981,7 +4112,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Rainwater Harvesting</label>
+                    <label className="form-label" style={fontStyles.details}>Rainwater Harvesting</label>
                     <select
                       className="form-select"
                       value={formData.sustainability.rainwater_harvesting}
@@ -3996,7 +4127,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Renewable Energy Use</label>
+                    <label className="form-label" style={fontStyles.details}>Renewable Energy Use</label>
                     <select
                       className="form-select"
                       value={formData.sustainability.renewable_energy}
@@ -4013,7 +4144,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Energy Efficient Equipment & Fixtures</label>
+                    <label className="form-label" style={fontStyles.details}>Energy Efficient Equipment & Fixtures</label>
                     <select
                       className="form-select"
                       value={formData.sustainability.energy_efficient_equipment}
@@ -4028,7 +4159,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Waste Segregation & Green Disposal</label>
+                    <label className="form-label" style={fontStyles.details}>Waste Segregation & Green Disposal</label>
                     <select
                       className="form-select"
                       value={formData.sustainability.waste_segregation}
@@ -4043,7 +4174,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">E-Vehicle Charging Stations</label>
+                    <label className="form-label" style={fontStyles.details}>E-Vehicle Charging Stations</label>
                     <select
                       className="form-select"
                       value={formData.sustainability.ev_charging_stations}
@@ -4062,7 +4193,7 @@ const AddProperty = () => {
               {/* Statutory & Regulatory Compliance */}
               <div className="row mb-4">
                 <div className="col-12">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     📄 Statutory & Regulatory Compliance
                   </h5>
                   <p className="text-muted small mb-3">Upload compliance documents (all optional)</p>
@@ -4070,7 +4201,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Occupancy Certificate (OC)</label>
+                    <label className="form-label" style={fontStyles.details}>Occupancy Certificate (OC)</label>
                     <input
                       type="file"
                       className="form-control"
@@ -4085,7 +4216,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Fire NOC</label>
+                    <label className="form-label" style={fontStyles.details}>Fire NOC</label>
                     <input
                       type="file"
                       className="form-control"
@@ -4100,7 +4231,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Pollution Control NOC</label>
+                    <label className="form-label" style={fontStyles.details}>Pollution Control NOC</label>
                     <input
                       type="file"
                       className="form-control"
@@ -4115,7 +4246,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Environmental Clearance Certificate</label>
+                    <label className="form-label" style={fontStyles.details}>Environmental Clearance Certificate</label>
                     <input
                       type="file"
                       className="form-control"
@@ -4130,7 +4261,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Zoning Clearance / Town Planning Approval</label>
+                    <label className="form-label" style={fontStyles.details}>Zoning Clearance / Town Planning Approval</label>
                     <input
                       type="file"
                       className="form-control"
@@ -4145,7 +4276,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Lift Safety Certificate</label>
+                    <label className="form-label" style={fontStyles.details}>Lift Safety Certificate</label>
                     <input
                       type="file"
                       className="form-control"
@@ -4160,7 +4291,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">DG Set Approval</label>
+                    <label className="form-label" style={fontStyles.details}>DG Set Approval</label>
                     <input
                       type="file"
                       className="form-control"
@@ -4175,7 +4306,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Building Completion Certificate (BCC)</label>
+                    <label className="form-label" style={fontStyles.details}>Building Completion Certificate (BCC)</label>
                     <input
                       type="file"
                       className="form-control"
@@ -4190,7 +4321,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Structural Stability Certificate</label>
+                    <label className="form-label" style={fontStyles.details}>Structural Stability Certificate</label>
                     <input
                       type="file"
                       className="form-control"
@@ -4205,7 +4336,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">SEZ Notification (if applicable)</label>
+                    <label className="form-label" style={fontStyles.details}>SEZ Notification (if applicable)</label>
                     <input
                       type="file"
                       className="form-control"
@@ -4220,7 +4351,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Disaster Management / Emergency Evacuation Plan</label>
+                    <label className="form-label" style={fontStyles.details}>Disaster Management / Emergency Evacuation Plan</label>
                     <input
                       type="file"
                       className="form-control"
@@ -4239,7 +4370,7 @@ const AddProperty = () => {
               {/* Certifications & Ratings */}
               <div className="row mb-4">
                 <div className="col-12">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     🏅 Certifications & Ratings
                   </h5>
                   <p className="text-muted small mb-3">All fields in this section are optional</p>
@@ -4247,7 +4378,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">LEED / IGBC Certification</label>
+                    <label className="form-label" style={fontStyles.details}>LEED / IGBC Certification</label>
                     <select
                       className="form-select"
                       value={formData.certifications.leed_igbc}
@@ -4265,7 +4396,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">WELL Building Standard</label>
+                    <label className="form-label" style={fontStyles.details}>WELL Building Standard</label>
                     <select
                       className="form-select"
                       value={formData.certifications.well_building}
@@ -4280,7 +4411,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Smart Building Certification</label>
+                    <label className="form-label" style={fontStyles.details}>Smart Building Certification</label>
                     <select
                       className="form-select"
                       value={formData.certifications.smart_building}
@@ -4295,7 +4426,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">NBC 2016 Compliance</label>
+                    <label className="form-label" style={fontStyles.details}>NBC 2016 Compliance</label>
                     <select
                       className="form-select"
                       value={formData.certifications.nbc_compliance}
@@ -4310,7 +4441,7 @@ const AddProperty = () => {
 
                 <div className="col-12">
                   <div className="mb-3">
-                    <label className="form-label">ISO Certifications (Select all that apply)</label>
+                    <label className="form-label" style={fontStyles.details}>ISO Certifications (Select all that apply)</label>
                     <div className="d-flex flex-wrap gap-3">
                       {['9001', '14001', '45001', '27001', '50001'].map(iso => (
                         <div className="form-check" key={iso}>
@@ -4332,7 +4463,7 @@ const AddProperty = () => {
 
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Any Other Certification (Specify)</label>
+                    <label className="form-label" style={fontStyles.details}>Any Other Certification (Specify)</label>
                     <input
                       type="text"
                       className="form-control"
@@ -4349,13 +4480,13 @@ const AddProperty = () => {
               {/* Additional Details */}
               {/* <div className="row">
                 <div className="col-md-6">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     <CIcon icon={cilSettings} className="me-2" />
                     Additional Details
                   </h5>
                   
                   <div className="mb-3">
-                    <label className="form-label">Cabins</label>
+                    <label className="form-label" style={fontStyles.details}>Cabins</label>
                     <select
                       className="form-select"
                       name="cabins"
@@ -4369,7 +4500,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Current Occupancy Percentage</label>
+                    <label className="form-label" style={fontStyles.details}>Current Occupancy Percentage</label>
                     <select
                       className="form-select"
                       name="current_occupancy_percentage"
@@ -4385,7 +4516,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Brand</label>
+                    <label className="form-label" style={fontStyles.details}>Brand</label>
                     <input
                       type="text"
                       className="form-control"
@@ -4396,7 +4527,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Center Type</label>
+                    <label className="form-label" style={fontStyles.details}>Center Type</label>
                     <input
                       type="text"
                       className="form-control"
@@ -4407,7 +4538,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Inventory Type</label>
+                    <label className="form-label" style={fontStyles.details}>Inventory Type</label>
                     <input
                       type="text"
                       className="form-control"
@@ -4419,13 +4550,13 @@ const AddProperty = () => {
                 </div>
 
                 <div className="col-md-6">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     <CIcon icon={cilCreditCard} className="me-2" />
                     Pricing & Features
                   </h5>
                   
                   <div className="mb-3">
-                    <label className="form-label">Product Types</label>
+                    <label className="form-label" style={fontStyles.details}>Product Types</label>
                     <select
                       className="form-select"
                       name="product_types"
@@ -4440,7 +4571,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Price</label>
+                    <label className="form-label" style={fontStyles.details}>Price</label>
                     <input
                       type="number"
                       className="form-control"
@@ -4451,7 +4582,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Minimum Lock-in Months</label>
+                    <label className="form-label" style={fontStyles.details}>Minimum Lock-in Months</label>
                     <input
                       type="number"
                       className="form-control"
@@ -4462,7 +4593,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Furnishing</label>
+                    <label className="form-label" style={fontStyles.details}>Furnishing</label>
                     <select
                       className="form-select"
                       name="furnishing"
@@ -4477,7 +4608,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Solutions</label>
+                    <label className="form-label" style={fontStyles.details}>Solutions</label>
                     <input
                       type="text"
                       className="form-control"
@@ -4494,13 +4625,13 @@ const AddProperty = () => {
               {/* Building Information */}
               {/* <div className="row">
                 <div className="col-md-6">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     <CIcon icon={cilBuilding} className="me-2" />
                     Building Information
                   </h5>
                   
                   <div className="mb-3">
-                    <label className="form-label">Developer</label>
+                    <label className="form-label" style={fontStyles.details}>Developer</label>
                     <input
                       type="text"
                       className="form-control"
@@ -4511,7 +4642,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Building Grade</label>
+                    <label className="form-label" style={fontStyles.details}>Building Grade</label>
                     <select
                       className="form-select"
                       name="building_grade"
@@ -4526,7 +4657,7 @@ const AddProperty = () => {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Year Built</label>
+                    <label className="form-label" style={fontStyles.details}>Year Built</label>
                     <input
                       type="number"
                       className="form-control"
@@ -4540,7 +4671,7 @@ const AddProperty = () => {
                 </div>
 
                 <div className="col-md-6">
-                  <h5 className="mb-3">
+                  <h5 className="mb-3" style={fontStyles.subtitle}>
                     <CIcon icon={cilStar} className="me-2" />
                     Features
                   </h5>

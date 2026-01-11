@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CIcon from '@coreui/icons-react';
-import { cilUser, cilEnvelopeOpen, cilSave, cilBuilding, cilPhone, cilLocationPin, cilShieldAlt } from '@coreui/icons';
+import { cilUser, cilEnvelopeOpen, cilSave, cilBuilding, cilPhone, cilLocationPin, cilShieldAlt, cilReload } from '@coreui/icons';
 import CustomAlert from '../components/CustomAlert';
 import { corporateService, CorporateUser } from '../services/corporateService';
 
@@ -20,6 +20,9 @@ const AddCorporateUser = () => {
     lat: '',
     long: ''
   });
+
+  const [isGeocodingLoading, setIsGeocodingLoading] = useState(false);
+  const [geocodeStatus, setGeocodeStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   // Alert state
   const [alertConfig, setAlertConfig] = useState({
@@ -42,6 +45,55 @@ const AddCorporateUser = () => {
     setAlertConfig(prev => ({ ...prev, isOpen: false }));
   };
 
+  // Geocoding function using OpenStreetMap Nominatim API
+  const geocodeAddress = useCallback(async (address: string, city: string) => {
+    if (!address || !city) {
+      setGeocodeStatus('idle');
+      setFormData(prev => ({ ...prev, lat: '', long: '' }));
+      return;
+    }
+
+    const fullAddress = `${address}, ${city}`;
+    setIsGeocodingLoading(true);
+    setGeocodeStatus('idle');
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1`,
+        {
+          headers: {
+            'Accept': 'application/json',
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Geocoding request failed');
+      }
+
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const { lat, lon } = data[0];
+        setFormData(prev => ({
+          ...prev,
+          lat: lat,
+          long: lon
+        }));
+        setGeocodeStatus('success');
+      } else {
+        setFormData(prev => ({ ...prev, lat: '', long: '' }));
+        setGeocodeStatus('error');
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      setFormData(prev => ({ ...prev, lat: '', long: '' }));
+      setGeocodeStatus('error');
+    } finally {
+      setIsGeocodingLoading(false);
+    }
+  }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -50,8 +102,19 @@ const AddCorporateUser = () => {
     }));
   };
 
+  // Handle address blur to trigger geocoding
+  const handleAddressBlur = () => {
+    geocodeAddress(formData.address, formData.city);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if lat/long are available
+    if (!formData.lat || !formData.long) {
+      showAlert('Warning', 'Unable to get location coordinates. Please verify the address and city.', 'warning');
+      return;
+    }
     
     try {
       const result = await corporateService.addCorporateUser(formData);
@@ -195,6 +258,7 @@ const AddCorporateUser = () => {
                   name="city"
                   value={formData.city}
                   onChange={handleInputChange}
+                  onBlur={handleAddressBlur}
                   required
                 />
               </div>
@@ -211,42 +275,54 @@ const AddCorporateUser = () => {
                   name="address"
                   value={formData.address}
                   onChange={handleInputChange}
+                  onBlur={handleAddressBlur}
                   required
                 />
               </div>
             </div>
 
-            <div className="row">
-              <div className="col-md-6 mb-3">
-                <label htmlFor="lat" className="form-label">
-                  <CIcon icon={cilLocationPin} className="me-2" />
-                  Latitude
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="lat"
-                  name="lat"
-                  value={formData.lat}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="col-md-6 mb-3">
-                <label htmlFor="long" className="form-label">
-                  <CIcon icon={cilLocationPin} className="me-2" />
-                  Longitude
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="long"
-                  name="long"
-                  value={formData.long}
-                  onChange={handleInputChange}
-                  required
-                />
+            {/* Location Status Indicator */}
+            <div className="row mb-3">
+              <div className="col-12">
+                <div className={`location-status p-3 rounded d-flex align-items-center gap-2 ${
+                  geocodeStatus === 'success' ? 'bg-success bg-opacity-10 border border-success' :
+                  geocodeStatus === 'error' ? 'bg-danger bg-opacity-10 border border-danger' :
+                  'bg-light border'
+                }`}>
+                  {isGeocodingLoading ? (
+                    <>
+                      <div className="spinner-border spinner-border-sm text-primary" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                      <span className="text-muted">Fetching location coordinates...</span>
+                    </>
+                  ) : geocodeStatus === 'success' ? (
+                    <>
+                      <CIcon icon={cilLocationPin} className="text-success" />
+                      <span className="text-success">
+                        Location found: {parseFloat(formData.lat || '0').toFixed(6)}, {parseFloat(formData.long || '0').toFixed(6)}
+                      </span>
+                    </>
+                  ) : geocodeStatus === 'error' ? (
+                    <>
+                      <CIcon icon={cilLocationPin} className="text-danger" />
+                      <span className="text-danger">Could not find location. Please verify the address.</span>
+                      <button 
+                        type="button" 
+                        className="btn btn-sm btn-outline-primary ms-auto d-flex align-items-center gap-1"
+                        onClick={() => geocodeAddress(formData.address, formData.city)}
+                      >
+                        <CIcon icon={cilReload} size="sm" />
+                        Retry
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <CIcon icon={cilLocationPin} className="text-muted" />
+                      <span className="text-muted">Enter city and address to auto-detect location coordinates</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
