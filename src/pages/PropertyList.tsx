@@ -46,6 +46,7 @@ interface Property {
   name_of_establishment: string;
   userid: number | null;
   categoryId: number;
+  categoryName?: string;
   partnerSubmissionId: number | null;
   subcategoryId: number;
   brand: string | null;
@@ -78,6 +79,8 @@ interface Property {
   city?: string;
   state_region?: string;
   locality_micro_market?: string;
+  wp_status?: number;
+  contact_number?: string;
 }
 
 interface ApiResponse {
@@ -93,8 +96,8 @@ const PropertyList = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [productTypeFilter, setProductTypeFilter] = useState('all');
-  const [subProductTypeFilter, setSubProductTypeFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [subCategoryFilter, setSubCategoryFilter] = useState<string>('all');
   const [locationFilter, setLocationFilter] = useState('all');
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,15 +105,19 @@ const PropertyList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProperties, setTotalProperties] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [productTypes, setProductTypes] = useState<string[]>([]);
-  const [subProductTypes, setSubProductTypes] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Array<{id: number, name: string}>>([]);
+  const [subCategories, setSubCategories] = useState<Array<{id: number, name: string}>>([]);
   const [locations, setLocations] = useState<string[]>([]);
-  const [productTypesData, setProductTypesData] = useState<Array<{id: number, name: string}>>([]);
-  const [subProductTypesData, setSubProductTypesData] = useState<Array<{id: number, name: string}>>([]);
+  const [loadingSubCategories, setLoadingSubCategories] = useState(false);
   
   // Action states
   const [actionLoading, setActionLoading] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  
+  // Edit modal states
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState<Partial<Property>>({});
+  const [editLoading, setEditLoading] = useState(false);
   
   // Custom alert states
   const [alertConfig, setAlertConfig] = useState({
@@ -157,25 +164,21 @@ const PropertyList = () => {
     }
   };
 
-  const handleProductTypeFilterChange = (productType: string) => {
-    setProductTypeFilter(productType);
-    setSubProductTypeFilter('all'); // Reset sub product type when product type changes
+  const handleCategoryFilterChange = (categoryId: string) => {
+    setCategoryFilter(categoryId);
+    setSubCategoryFilter('all'); // Reset sub category when category changes
     setCurrentPage(1);
     
-    // Fetch sub product types if a product type is selected
-    if (productType !== 'all') {
-      const selectedProductType = productTypesData.find(type => type.name === productType);
-      if (selectedProductType) {
-        fetchSubProductTypes(selectedProductType.id);
-      }
+    // Fetch sub categories if a category is selected
+    if (categoryId !== 'all') {
+      fetchSubCategories(Number(categoryId));
     } else {
-      setSubProductTypesData([]);
-      setSubProductTypes([]);
+      setSubCategories([]);
     }
   };
 
-  const handleSubProductTypeFilterChange = (subProductType: string) => {
-    setSubProductTypeFilter(subProductType);
+  const handleSubCategoryFilterChange = (subCategoryId: string) => {
+    setSubCategoryFilter(subCategoryId);
     setCurrentPage(1);
   };
 
@@ -187,14 +190,15 @@ const PropertyList = () => {
   const handleReset = () => {
     setSearchTerm('');
     setSearchQuery('');
-    setProductTypeFilter('all');
-    setSubProductTypeFilter('all');
+    setCategoryFilter('all');
+    setSubCategoryFilter('all');
+    setSubCategories([]);
     setLocationFilter('all');
     setCurrentPage(1);
   };
 
-  // Fetch product types from API
-  const fetchProductTypes = async () => {
+  // Fetch categories from API
+  const fetchCategories = async () => {
     try {
       const response = await apiService.authFetch(`${config.API_BASE_URL}/property/category`, {
         method: 'GET'
@@ -203,17 +207,16 @@ const PropertyList = () => {
       const data = await response.json();
 
       if (response.ok && data.status) {
-        setProductTypesData(data.data);
-        const uniqueProductTypes = Array.from(new Set(data.data.map((type: any) => type.name).filter((name: any) => typeof name === 'string'))) as string[];
-        setProductTypes(uniqueProductTypes);
+        setCategories(data.data);
       }
     } catch (error) {
-      console.error('Error fetching product types:', error);
+      console.error('Error fetching categories:', error);
     }
   };
 
-  // Fetch sub product types based on selected parent
-  const fetchSubProductTypes = async (parentId: number) => {
+  // Fetch sub categories based on selected parent category ID
+  const fetchSubCategories = async (parentId: number) => {
+    setLoadingSubCategories(true);
     try {
       const response = await apiService.authFetch(`${config.API_BASE_URL}/property/category?parentId=${parentId}`, {
         method: 'GET'
@@ -222,21 +225,19 @@ const PropertyList = () => {
       const data = await response.json();
 
       if (response.ok && data.status) {
-        setSubProductTypesData(data.data);
-        const uniqueSubProductTypes = Array.from(new Set(data.data.map((type: any) => type.name).filter((name: any) => typeof name === 'string'))) as string[];
-        setSubProductTypes(uniqueSubProductTypes);
+        setSubCategories(data.data);
       } else {
-        setSubProductTypesData([]);
-        setSubProductTypes([]);
+        setSubCategories([]);
       }
     } catch (error) {
-      console.error('Error fetching sub product types:', error);
-      setSubProductTypesData([]);
-      setSubProductTypes([]);
+      console.error('Error fetching sub categories:', error);
+      setSubCategories([]);
+    } finally {
+      setLoadingSubCategories(false);
     }
   };
 
-  const fetchProperties = async (page: number = 1, search: string = '', productType: string = 'all', subProductType: string = 'all', location: string = 'all') => {
+  const fetchProperties = async (page: number = 1, search: string = '', categoryId: string = 'all', subCategoryId: string = 'all', location: string = 'all') => {
     setLoading(true);
     setError(null);
     
@@ -263,12 +264,12 @@ const PropertyList = () => {
         url += `&search=${encodeURIComponent(search)}`;
       }
       
-      if (productType !== 'all') {
-        url += `&product_type=${encodeURIComponent(productType)}`;
+      if (categoryId !== 'all') {
+        url += `&categoryId=${encodeURIComponent(categoryId)}`;
       }
 
-      if (subProductType !== 'all') {
-        url += `&product_sub_type=${encodeURIComponent(subProductType)}`;
+      if (subCategoryId !== 'all') {
+        url += `&subcategoryId=${encodeURIComponent(subCategoryId)}`;
       }
 
       if (location !== 'all') {
@@ -282,16 +283,15 @@ const PropertyList = () => {
       const data: ApiResponse = await response.json();
 
       if (response.ok && data.status) {
-        setProperties(data.data.spaceList);
-        setTotalProperties(data.data.spaceList.length);
+        // Filter out properties with wp_status === 3
+        const filteredProperties = data.data.spaceList.filter(property => property.wp_status !== 3);
+        
+        setProperties(filteredProperties);
+        setTotalProperties(filteredProperties.length);
         setTotalPages(1); // Assuming single page for now
         
-        // Extract unique product types for filters
-        const uniqueProductTypes = Array.from(new Set(data.data.spaceList.map(property => property.product_types)));
-        setProductTypes(uniqueProductTypes);
-        
         // Extract unique locations for filters
-        const uniqueLocations = Array.from(new Set(data.data.spaceList
+        const uniqueLocations = Array.from(new Set(filteredProperties
           .map(property => property.city)
           .filter(city => city && city.trim() !== '')
         ));
@@ -325,7 +325,7 @@ const PropertyList = () => {
     setActionLoading(true);
     
     try {
-      const response = await apiService.authFetch(`${config.API_BASE_URL}/property/delete/${propertyId}`, {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/workspace/delete/${propertyId}`, {
         method: 'DELETE'
       });
 
@@ -333,7 +333,7 @@ const PropertyList = () => {
 
       if (response.ok && data.status) {
         showAlert('Success', 'Property deleted successfully!', 'success');
-        fetchProperties(currentPage, searchQuery, productTypeFilter, subProductTypeFilter, locationFilter);
+        fetchProperties(currentPage, searchQuery, categoryFilter, subCategoryFilter, locationFilter);
       } else {
         showAlert('Error', data.message || 'Failed to delete property', 'error');
       }
@@ -347,7 +347,92 @@ const PropertyList = () => {
   };
 
   const handleEdit = (property: Property) => {
-    navigate(`/property/edit/${property.id}`);
+    setEditFormData({
+      id: property.id,
+      property_id: property.property_id,
+      name_of_establishment: property.name_of_establishment,
+      brand: property.brand,
+      product_types: property.product_types,
+      product_sub_types: property.product_sub_types,
+      city: property.city,
+      state_region: property.state_region,
+      locality_micro_market: property.locality_micro_market,
+      latitude: property.latitude,
+      longitude: property.longitude,
+      contact_number: property.contact_number,
+      price: property.price,
+      area_in_sqft: property.area_in_sqft,
+      num_of_seats_available_for_coworking: property.num_of_seats_available_for_coworking,
+      seating_capacity: property.seating_capacity,
+      parking: property.parking,
+      metro_connectivity: property.metro_connectivity,
+      is_popular: property.is_popular,
+      furnishing: property.furnishing,
+      developer: property.developer,
+      building_grade: property.building_grade,
+      year_built: property.year_built,
+      center_type: property.center_type,
+      cabins: property.cabins,
+      current_occupancy_percentage: property.current_occupancy_percentage,
+      min_lock_in_months: property.min_lock_in_months,
+      min_inventory_unit: property.min_inventory_unit,
+      inventory_type: property.inventory_type,
+      solutions: property.solutions,
+      status: property.status
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: type === 'number' ? (value === '' ? null : Number(value)) : value
+    }));
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: checked ? 1 : 0
+    }));
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditFormData({});
+  };
+
+  const handleUpdateProperty = async () => {
+    if (!editFormData.id) return;
+    
+    setEditLoading(true);
+    
+    try {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/property/update/${editFormData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(editFormData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.status) {
+        showAlert('Success', 'Property updated successfully!', 'success');
+        closeEditModal();
+        fetchProperties(currentPage, searchQuery, categoryFilter, subCategoryFilter, locationFilter);
+      } else {
+        showAlert('Error', data.message || 'Failed to update property', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating property:', error);
+      showAlert('Error', 'An error occurred while updating the property', 'error');
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   const handlePageChange = (page: number) => {
@@ -385,11 +470,11 @@ const PropertyList = () => {
   };
 
   useEffect(() => {
-    fetchProperties(currentPage, searchQuery, productTypeFilter, subProductTypeFilter, locationFilter);
-  }, [currentPage, searchQuery, productTypeFilter, subProductTypeFilter, locationFilter]);
+    fetchProperties(currentPage, searchQuery, categoryFilter, subCategoryFilter, locationFilter);
+  }, [currentPage, searchQuery, categoryFilter, subCategoryFilter, locationFilter]);
 
   useEffect(() => {
-    fetchProductTypes();
+    fetchCategories();
   }, []);
 
   return (
@@ -448,29 +533,33 @@ const PropertyList = () => {
               <div className="col-md-2">
                 <select
                   className="form-select"
-                  value={productTypeFilter}
-                  onChange={(e) => handleProductTypeFilterChange(e.target.value)}
+                  value={categoryFilter}
+                  onChange={(e) => handleCategoryFilterChange(e.target.value)}
                 >
-                  <option value="all">All Product Types</option>
-                  {productTypes.map((type) => (
-                    <option key={type} value={type}>{type}</option>
+                  <option value="all">All Categories</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>{category.name}</option>
                   ))}
                 </select>
               </div>
 
-              <div className="col-md-2">
-                <select
-                  className="form-select"
-                  value={subProductTypeFilter}
-                  onChange={(e) => handleSubProductTypeFilterChange(e.target.value)}
-                  disabled={productTypeFilter === 'all'}
-                >
-                  <option value="all">All Sub Types</option>
-                  {subProductTypes.map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
+              {categoryFilter !== 'all' && (
+                <div className="col-md-2">
+                  <select
+                    className="form-select"
+                    value={subCategoryFilter}
+                    onChange={(e) => handleSubCategoryFilterChange(e.target.value)}
+                    disabled={loadingSubCategories}
+                  >
+                    <option value="all">
+                      {loadingSubCategories ? 'Loading...' : 'All Sub Categories'}
+                    </option>
+                    {subCategories.map((subCategory) => (
+                      <option key={subCategory.id} value={subCategory.id}>{subCategory.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="col-md-2">
                 <select
@@ -526,14 +615,12 @@ const PropertyList = () => {
                   <table className="table table-hover">
                     <thead className="table-light">
                       <tr>
-                        <th>Property ID</th>
-                        <th>Property</th>
-                        {/* <th>Brand</th> */}
-                        <th>Location</th>
+                        <th>Property Id</th>
+                        <th>Property Name</th>
+                        <th>Category</th>
+                        <th>Brand</th>
+                        <th>City</th>
                         <th>Contact</th>
-                        <th>Details</th>
-                        <th>Features</th>
-                        {/* <th>Price</th> */}
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -545,78 +632,33 @@ const PropertyList = () => {
                             <td>{property?.property_id}</td>
                             <td>
                               <div className="d-flex align-items-center">
-                                <div className="bg-light rounded me-3 d-flex align-items-center justify-content-center" style={{ width: '50px', height: '50px' }}>
-                                  <CIcon icon={cilBuilding} className="text-muted" />
-                                </div>
+                                
                                 <div>
                                   <h6 className="mb-1">{property?.name_of_establishment || 'Unnamed Property'}</h6>
-                                  <small className="text-muted">{property.product_types}</small>
+                                  {/* <small className="text-muted">{property.product_types}</small> */}
                                 </div>
                               </div>
                             </td>
                             <td>
                               <div>
-                                <div className="fw-bold">{property.city || 'N/A'}</div>
-                                <small className="text-muted">
-                                  {property.locality_micro_market || 'N/A'}
-                                </small>
-                                <br />
-                                <small className="text-muted">
-                                  Lat: {property.latitude}, Long: {property.longitude}
-                                </small>
+                                <div className="fw-bold">{property.categoryName || 'N/A'}</div>
                               </div>
                             </td>
                             <td>
                               <div>
-                                {consultantInfo ? (
-                                  <>
-                                    <div className="fw-bold">{consultantInfo.name}</div>
-                                    <small className="text-muted">
-                                      <CIcon icon={cilPhone} className="me-1" />
-                                      {consultantInfo.phone}
-                                    </small>
-                                  </>
-                                ) : (
-                                  <small className="text-muted">No consultant assigned</small>
-                                )}
+                              <div className="fw-bold">{property.brand || 'N/A'}</div>
                               </div>
                             </td>
                             <td>
                               <div>
-                                <div className="fw-bold">{property.area_in_sqft ? `${property.area_in_sqft} sq ft` : 'N/A'}</div>
-                                <small className="text-muted">
-                                  {property.num_of_seats_available_for_coworking ? `${property.num_of_seats_available_for_coworking} seats` : 'N/A'}
-                                </small>
-                                <br />
-                                <small className="text-muted">
-                                  {property.center_type || 'N/A'}
-                                </small>
-                                {property.product_sub_types && (
-                                  <>
-                                    <br />
-                                    <small className="text-info">
-                                      Sub Type: {property.product_sub_types}
-                                    </small>
-                                  </>
-                                )}
-                              </div>
-                            </td>
-                            <td>
-                              <div className="d-flex align-items-center">
-                                {getFeatureIcons(property)}
-                                <small className="text-muted">
-                                  {property.product_types}
-                                </small>
+                                <div className="fw-bold">{property.city ? `${property.city}` : 'N/A'}</div>
+                                
                               </div>
                             </td>
                             <td>
                               <div>
-                                <div className="fw-bold">
-                                  {property.price ? `₹${property.price.toLocaleString()}` : 'N/A'}
-                                </div>
-                                <small className="text-muted">
-                                  {property.min_lock_in_months ? `${property.min_lock_in_months} months min` : 'N/A'}
-                                </small>
+                                <div className="fw-bold">{property.contact_number ? `${property.contact_number}` : 'N/A'}</div>
+                                
                               </div>
                             </td>
                             <td>
@@ -707,6 +749,411 @@ const PropertyList = () => {
         confirmText="Delete"
         cancelText="Cancel"
       />
+
+      {/* Edit Property Modal */}
+      {isEditModalOpen && (
+        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex={-1}>
+          <div className="modal-dialog modal-xl modal-dialog-scrollable">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <CIcon icon={cilPencil} className="me-2" />
+                  Edit Property
+                </h5>
+                <button type="button" className="btn-close" onClick={closeEditModal} disabled={editLoading}></button>
+              </div>
+              <div className="modal-body">
+                <form>
+                  {/* Basic Information */}
+                  <h6 className="text-primary mb-3 border-bottom pb-2">Basic Information</h6>
+                  <div className="row mb-4">
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Property ID</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="property_id"
+                        value={editFormData.property_id || ''}
+                        onChange={handleEditInputChange}
+                        disabled
+                      />
+                    </div>
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Name of Establishment *</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="name_of_establishment"
+                        value={editFormData.name_of_establishment || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Brand</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="brand"
+                        value={editFormData.brand || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="row mb-4">
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Product Type</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="product_types"
+                        value={editFormData.product_types || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Product Sub Type</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="product_sub_types"
+                        value={editFormData.product_sub_types || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Center Type</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="center_type"
+                        value={editFormData.center_type || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Location Information */}
+                  <h6 className="text-primary mb-3 border-bottom pb-2">Location Information</h6>
+                  <div className="row mb-4">
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">City</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="city"
+                        value={editFormData.city || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">State/Region</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="state_region"
+                        value={editFormData.state_region || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Locality/Micro Market</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="locality_micro_market"
+                        value={editFormData.locality_micro_market || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="row mb-4">
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">Latitude</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="latitude"
+                        value={editFormData.latitude || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">Longitude</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="longitude"
+                        value={editFormData.longitude || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Contact Information */}
+                  <h6 className="text-primary mb-3 border-bottom pb-2">Contact Information</h6>
+                  <div className="row mb-4">
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">Contact Number</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="contact_number"
+                        value={editFormData.contact_number || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Property Details */}
+                  <h6 className="text-primary mb-3 border-bottom pb-2">Property Details</h6>
+                  <div className="row mb-4">
+                    <div className="col-md-3 mb-3">
+                      <label className="form-label">Price</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        name="price"
+                        value={editFormData.price ?? ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="col-md-3 mb-3">
+                      <label className="form-label">Area (sq ft)</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        name="area_in_sqft"
+                        value={editFormData.area_in_sqft ?? ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="col-md-3 mb-3">
+                      <label className="form-label">Seats Available</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        name="num_of_seats_available_for_coworking"
+                        value={editFormData.num_of_seats_available_for_coworking ?? ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="col-md-3 mb-3">
+                      <label className="form-label">Seating Capacity</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        name="seating_capacity"
+                        value={editFormData.seating_capacity ?? ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="row mb-4">
+                    <div className="col-md-3 mb-3">
+                      <label className="form-label">Cabins</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="cabins"
+                        value={editFormData.cabins || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="col-md-3 mb-3">
+                      <label className="form-label">Min Lock-in (Months)</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        name="min_lock_in_months"
+                        value={editFormData.min_lock_in_months ?? ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="col-md-3 mb-3">
+                      <label className="form-label">Min Inventory Unit</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        name="min_inventory_unit"
+                        value={editFormData.min_inventory_unit ?? ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="col-md-3 mb-3">
+                      <label className="form-label">Current Occupancy (%)</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="current_occupancy_percentage"
+                        value={editFormData.current_occupancy_percentage || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Building Information */}
+                  <h6 className="text-primary mb-3 border-bottom pb-2">Building Information</h6>
+                  <div className="row mb-4">
+                    <div className="col-md-3 mb-3">
+                      <label className="form-label">Furnishing</label>
+                      <select
+                        className="form-select"
+                        name="furnishing"
+                        value={editFormData.furnishing || ''}
+                        onChange={handleEditInputChange}
+                      >
+                        <option value="">Select</option>
+                        <option value="Furnished">Furnished</option>
+                        <option value="Semi-Furnished">Semi-Furnished</option>
+                        <option value="Unfurnished">Unfurnished</option>
+                      </select>
+                    </div>
+                    <div className="col-md-3 mb-3">
+                      <label className="form-label">Developer</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="developer"
+                        value={editFormData.developer || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="col-md-3 mb-3">
+                      <label className="form-label">Building Grade</label>
+                      <select
+                        className="form-select"
+                        name="building_grade"
+                        value={editFormData.building_grade || ''}
+                        onChange={handleEditInputChange}
+                      >
+                        <option value="">Select</option>
+                        <option value="A">Grade A</option>
+                        <option value="B">Grade B</option>
+                        <option value="C">Grade C</option>
+                      </select>
+                    </div>
+                    <div className="col-md-3 mb-3">
+                      <label className="form-label">Year Built</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="year_built"
+                        value={editFormData.year_built || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="row mb-4">
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">Inventory Type</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="inventory_type"
+                        value={editFormData.inventory_type || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label">Solutions</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="solutions"
+                        value={editFormData.solutions || ''}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Features */}
+                  <h6 className="text-primary mb-3 border-bottom pb-2">Features</h6>
+                  <div className="row mb-4">
+                    <div className="col-md-3 mb-3">
+                      <div className="form-check">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          id="parking"
+                          name="parking"
+                          checked={editFormData.parking === 1}
+                          onChange={handleCheckboxChange}
+                        />
+                        <label className="form-check-label" htmlFor="parking">Parking Available</label>
+                      </div>
+                    </div>
+                    <div className="col-md-3 mb-3">
+                      <div className="form-check">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          id="metro_connectivity"
+                          name="metro_connectivity"
+                          checked={editFormData.metro_connectivity === 1}
+                          onChange={handleCheckboxChange}
+                        />
+                        <label className="form-check-label" htmlFor="metro_connectivity">Metro Connectivity</label>
+                      </div>
+                    </div>
+                    <div className="col-md-3 mb-3">
+                      <div className="form-check">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          id="is_popular"
+                          name="is_popular"
+                          checked={editFormData.is_popular === 1}
+                          onChange={handleCheckboxChange}
+                        />
+                        <label className="form-check-label" htmlFor="is_popular">Popular Property</label>
+                      </div>
+                    </div>
+                    <div className="col-md-3 mb-3">
+                      <label className="form-label">Status</label>
+                      <select
+                        className="form-select"
+                        name="status"
+                        value={editFormData.status ?? ''}
+                        onChange={handleEditInputChange}
+                      >
+                        <option value={1}>Active</option>
+                        <option value={0}>Inactive</option>
+                      </select>
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={closeEditModal} disabled={editLoading}>
+                  Cancel
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-primary" 
+                  onClick={handleUpdateProperty}
+                  disabled={editLoading}
+                >
+                  {editLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <CIcon icon={cilCheck} className="me-2" />
+                      Update Property
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
