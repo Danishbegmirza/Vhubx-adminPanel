@@ -29,6 +29,9 @@ import CustomAlert from '../components/CustomAlert';
 import { config } from '../config/env';
 import { amenityService, Amenity } from '../services/amenityService';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+declare const google: any;
+
 // ==================== FONT CONFIGURATION ====================
 // Centralized font settings - modify these to change fonts across the page
 const fontConfig = {
@@ -127,6 +130,7 @@ interface PropertyFormData {
   country: string;
   state_region: string;
   city: string;
+  location: string;
   locality_micro_market: string;
   full_address: string;
   pincode_zip_code: string;
@@ -351,7 +355,7 @@ interface PropertyFormData {
   opening_time: string;
   internet_type: string;
   num_of_seats_available_for_coworking: string;
-  pictures_of_the_space: File | null;
+  pictures_of_the_space: File[];
   categoryId: string;
   subcategoryId: string;
   latitude: string;
@@ -398,6 +402,11 @@ const AddProperty = () => {
   const [brandList, setBrandList] = useState<string[]>([]);
   const [brandListLoading, setBrandListLoading] = useState(true);
   const [customBrandName, setCustomBrandName] = useState('');
+  
+  // Location search states
+  const [locationSuggestions, setLocationSuggestions] = useState<Array<{description: string, place_id: string}>>([]);
+  const [locationSearchLoading, setLocationSearchLoading] = useState(false);
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
 
   // Fetch amenities from API
   const fetchAmenities = async () => {
@@ -545,6 +554,119 @@ const AddProperty = () => {
     }
   };
 
+  // Search locations based on city using Google Places Autocomplete API
+  const searchLocationsByCity = async (searchText: string, city: string) => {
+    if (!searchText || searchText.length < 2) {
+      setLocationSuggestions([]);
+      setShowLocationDropdown(false);
+      return;
+    }
+
+    try {
+      setLocationSearchLoading(true);
+      
+      // Use Google Places Autocomplete API
+      const autocompleteService = new google.maps.places.AutocompleteService();
+      
+      const request: google.maps.places.AutocompletionRequest = {
+        input: searchText,
+        types: ['geocode', 'establishment'],
+        componentRestrictions: city ? undefined : { country: 'in' },
+      };
+      
+      // If city is selected, add it to the search query
+      if (city) {
+        request.input = `${searchText}, ${city}`;
+      }
+
+      autocompleteService.getPlacePredictions(request, (predictions, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+          setLocationSuggestions(predictions.map(p => ({
+            description: p.description,
+            place_id: p.place_id
+          })));
+          setShowLocationDropdown(true);
+        } else {
+          setLocationSuggestions([]);
+          setShowLocationDropdown(false);
+        }
+        setLocationSearchLoading(false);
+      });
+    } catch (error) {
+      console.error('Error searching locations:', error);
+      setLocationSuggestions([]);
+      setShowLocationDropdown(false);
+      setLocationSearchLoading(false);
+    }
+  };
+
+  // Handle location selection and fetch lat/long
+  const handleLocationSelect = (location: string, placeId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      location: location
+    }));
+    setShowLocationDropdown(false);
+    setLocationSuggestions([]);
+
+    // Fetch lat/long from place_id using Geocoder
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ placeId: placeId }, (results: any, status: any) => {
+      if (status === 'OK' && results && results[0]) {
+        const lat = results[0].geometry.location.lat();
+        const lng = results[0].geometry.location.lng();
+        setFormData(prev => ({
+          ...prev,
+          latitude: lat.toString(),
+          longitude: lng.toString()
+        }));
+      }
+    });
+  };
+
+  // Get current location using browser Geolocation API
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      showAlert('Error', 'Geolocation is not supported by your browser', 'error');
+      return;
+    }
+
+    setLocationSearchLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        setFormData(prev => ({
+          ...prev,
+          latitude: lat.toString(),
+          longitude: lng.toString()
+        }));
+
+        // Reverse geocode to get location name
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode(
+          { location: { lat, lng } },
+          (results: any, status: any) => {
+            if (status === 'OK' && results && results[0]) {
+              setFormData(prev => ({
+                ...prev,
+                location: results[0].formatted_address
+              }));
+            }
+            setLocationSearchLoading(false);
+          }
+        );
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        showAlert('Error', 'Unable to get your current location. Please allow location access.', 'error');
+        setLocationSearchLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
   useEffect(() => {
     fetchAmenities();
     fetchProductTypes();
@@ -563,6 +685,7 @@ const AddProperty = () => {
     country: '',
     state_region: '',
     city: '',
+    location: '',
     locality_micro_market: '',
     full_address: '',
     pincode_zip_code: '',
@@ -722,9 +845,9 @@ const AddProperty = () => {
     opening_time: '',
     internet_type: '',
     num_of_seats_available_for_coworking: '',
-    pictures_of_the_space: null,
-    categoryId: '1',
-    subcategoryId: '4',
+    pictures_of_the_space: [],
+    categoryId: '',
+    subcategoryId: '',
     latitude: '',
     longitude: '',
     area_in_sqft: '',
@@ -844,15 +967,17 @@ const AddProperty = () => {
         [name]: value
       }));
 
-      // If product type is selected, fetch sub types
+      // If product type is selected, fetch sub types and update categoryId
       if (name === 'product_types' && value) {
         const selectedProductType = productTypes.find(type => type.name === value);
         if (selectedProductType) {
           fetchProductSubTypes(selectedProductType.id);
-          // Reset sub type selection when product type changes
+          // Reset sub type selection and update categoryId when product type changes
           setFormData(prev => ({
             ...prev,
-            product_sub_types: ''
+            product_sub_types: '',
+            categoryId: String(selectedProductType.id),
+            subcategoryId: '' // Reset subcategoryId when category changes
           }));
         }
       } else if (name === 'product_types' && !value) {
@@ -860,26 +985,58 @@ const AddProperty = () => {
         setProductSubTypes([]);
         setFormData(prev => ({
           ...prev,
-          product_sub_types: ''
+          product_sub_types: '',
+          categoryId: '',
+          subcategoryId: ''
         }));
       }
 
-      // If product sub type is selected, fetch dynamic fields
+      // If product sub type is selected, fetch dynamic fields and update subcategoryId
       if (name === 'product_sub_types' && value) {
+        const selectedSubType = productSubTypes.find(type => type.name === value);
+        if (selectedSubType) {
+          // Update subcategoryId with the selected sub type's id
+          setFormData(prev => ({
+            ...prev,
+            subcategoryId: String(selectedSubType.id)
+          }));
+        }
         // For now, using hardcoded value as requested
         fetchDynamicFields('managed_office');
       } else if (name === 'product_sub_types' && !value) {
-        // Clear dynamic fields when no sub type is selected
+        // Clear dynamic fields and subcategoryId when no sub type is selected
         setDynamicFields({});
+        setFormData(prev => ({
+          ...prev,
+          subcategoryId: ''
+        }));
       }
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      // Filter only allowed image types: jpg, jpeg, png
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      const validFiles = Array.from(files).filter(file => allowedTypes.includes(file.type));
+      
+      if (validFiles.length !== files.length) {
+        showAlert('Warning', 'Only JPG, JPEG, and PNG images are allowed. Some files were filtered out.', 'warning');
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        pictures_of_the_space: [...prev.pictures_of_the_space, ...validFiles]
+      }));
+    }
+  };
+
+  // Remove a picture from the list
+  const handleRemovePicture = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      pictures_of_the_space: file
+      pictures_of_the_space: prev.pictures_of_the_space.filter((_, i) => i !== index)
     }));
   };
 
@@ -1613,9 +1770,16 @@ const AddProperty = () => {
         }));
       });
 
-      // Handle pictures
-      if (formData.pictures_of_the_space) {
-        formDataToSend.append('pictures_of_the_space', formData.pictures_of_the_space);
+      // Handle pictures - multiple images with key pictures_of_the_space
+      if (formData.pictures_of_the_space && formData.pictures_of_the_space.length > 0) {
+        formData.pictures_of_the_space.forEach((file) => {
+          formDataToSend.append('pictures_of_the_space', file);
+        });
+      }
+
+      // Add location if provided
+      if (formData.location) {
+        formDataToSend.append('location', formData.location);
       }
 
       // Handle amenities - convert selectedAmenities array to the expected format
@@ -1915,14 +2079,13 @@ const AddProperty = () => {
 
                     <div className="col-md-4">
                       <div className="mb-3">
-                        <label className="form-label" style={fontStyles.details}>Opening Time *</label>
+                        <label className="form-label" style={fontStyles.details}>Opening Time</label>
                         <input
                           type="time"
                           className="form-control"
                           name="opening_time"
                           value={formData.opening_time}
                           onChange={handleInputChange}
-                          required
                         />
                       </div>
 
@@ -1957,17 +2120,88 @@ const AddProperty = () => {
                       </div>
                     </div>
 
-                    <div className="col-md-4">
+                  </div>
+
+                  {/* Pictures of the Space - Multiple Images */}
+                  <div className="row mt-4">
+                    <div className="col-12">
+                      <h6 className="mb-3" style={fontStyles.subsection}>
+                        <CIcon icon={cilImage} className="me-2" />
+                        Pictures of the Space
+                      </h6>
+                    </div>
+                    <div className="col-12">
                       <div className="mb-3">
-                        <label className="form-label" style={fontStyles.details}>Pictures of the Space</label>
+                        <label className="form-label" style={fontStyles.details}>Upload Space Images</label>
                         <input
                           type="file"
                           className="form-control"
                           name="pictures_of_the_space"
                           onChange={handleFileChange}
-                          accept="image/*"
+                          accept=".jpg,.jpeg,.png"
+                          multiple
                         />
+                        <small className="text-muted">Select multiple images (JPG, JPEG, PNG only)</small>
                       </div>
+                      
+                      {/* Preview selected images */}
+                      {formData.pictures_of_the_space.length > 0 && (
+                        <div className="mb-3">
+                          <label className="form-label" style={fontStyles.details}>Selected Images ({formData.pictures_of_the_space.length})</label>
+                          <div className="d-flex flex-wrap gap-2">
+                            {formData.pictures_of_the_space.map((file, index) => (
+                              <div 
+                                key={index} 
+                                className="position-relative"
+                                style={{
+                                  width: '100px',
+                                  height: '100px',
+                                  border: '1px solid #ddd',
+                                  borderRadius: '8px',
+                                  overflow: 'hidden'
+                                }}
+                              >
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt={`Preview ${index + 1}`}
+                                  style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover'
+                                  }}
+                                />
+                                <button
+                                  type="button"
+                                  className="btn btn-danger btn-sm position-absolute"
+                                  style={{
+                                    top: '2px',
+                                    right: '2px',
+                                    padding: '2px 6px',
+                                    fontSize: '10px',
+                                    lineHeight: '1'
+                                  }}
+                                  onClick={() => handleRemovePicture(index)}
+                                >
+                                  <CIcon icon={cilX} size="sm" />
+                                </button>
+                                <div 
+                                  className="position-absolute text-white text-center"
+                                  style={{
+                                    bottom: '0',
+                                    left: '0',
+                                    right: '0',
+                                    background: 'rgba(0,0,0,0.6)',
+                                    fontSize: '9px',
+                                    padding: '2px'
+                                  }}
+                                >
+                                  {file.name.length > 12 ? file.name.substring(0, 12) + '...' : file.name}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -3178,6 +3412,83 @@ const AddProperty = () => {
                     </select>
                   </div>
 
+                  <div className="mb-3" style={{ position: 'relative' }}>
+                    <label className="form-label" style={fontStyles.details}>Location</label>
+                    <div className="input-group">
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="location"
+                        value={formData.location}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData(prev => ({ ...prev, location: value }));
+                          searchLocationsByCity(value, formData.city);
+                        }}
+                        onFocus={() => {
+                          if (locationSuggestions.length > 0) {
+                            setShowLocationDropdown(true);
+                          }
+                        }}
+                        onBlur={() => {
+                          // Delay hiding dropdown to allow click on suggestion
+                          setTimeout(() => setShowLocationDropdown(false), 200);
+                        }}
+                        placeholder="Search location or use current location..."
+                        autoComplete="off"
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary"
+                        onClick={getCurrentLocation}
+                        disabled={locationSearchLoading}
+                        title="Use Current Location"
+                      >
+                        {locationSearchLoading ? (
+                          <span className="spinner-border spinner-border-sm" role="status"></span>
+                        ) : (
+                          <CIcon icon={cilLocationPin} />
+                        )}
+                      </button>
+                    </div>
+                    {showLocationDropdown && locationSuggestions.length > 0 && (
+                      <div 
+                        className="position-absolute w-100 bg-white border rounded shadow-sm"
+                        style={{ 
+                          zIndex: 1000, 
+                          maxHeight: '200px', 
+                          overflowY: 'auto',
+                          top: '100%'
+                        }}
+                      >
+                        {locationSuggestions.map((suggestion, index) => (
+                          <div
+                            key={suggestion.place_id}
+                            className="px-3 py-2 cursor-pointer"
+                            style={{ 
+                              cursor: 'pointer',
+                              borderBottom: index < locationSuggestions.length - 1 ? '1px solid #eee' : 'none'
+                            }}
+                            onClick={() => handleLocationSelect(suggestion.description, suggestion.place_id)}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+                          >
+                            <small><CIcon icon={cilLocationPin} className="me-2" size="sm" />{suggestion.description}</small>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <small className="text-muted">Search location or click the pin icon to use your current location</small>
+                    {formData.latitude && formData.longitude && (
+                      <div className="mt-2 p-2 bg-light rounded">
+                        <small className="text-success">
+                          <CIcon icon={cilMap} className="me-1" />
+                          Coordinates: {parseFloat(formData.latitude).toFixed(6)}, {parseFloat(formData.longitude).toFixed(6)}
+                        </small>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="mb-3">
                     <label className="form-label" style={fontStyles.details}>Locality / Micro-market *</label>
                     <input
@@ -3217,53 +3528,6 @@ const AddProperty = () => {
                       placeholder="e.g., 110001"
                       required
                     />
-                  </div>
-                </div>
-              </div>
-
-              <div className="row mb-4">
-                <div className="col-12">
-                  <h6 className="mb-3" style={fontStyles.subsection}>
-                    <CIcon icon={cilMap} className="me-2" />
-                    Google Map Coordinates
-                  </h6>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label" style={fontStyles.details}>Latitude *</label>
-                        <input
-                          type="number"
-                          step="any"
-                          className="form-control"
-                          name="latitude"
-                          value={formData.latitude}
-                          onChange={handleInputChange}
-                          placeholder="e.g., 28.6139"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label" style={fontStyles.details}>Longitude *</label>
-                        <input
-                          type="number"
-                          step="any"
-                          className="form-control"
-                          name="longitude"
-                          value={formData.longitude}
-                          onChange={handleInputChange}
-                          placeholder="e.g., 77.2090"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="alert alert-info">
-                    <small>
-                      <CIcon icon={cilMap} className="me-1" />
-                      You can get coordinates from Google Maps by right-clicking on the location and selecting "What's here?"
-                    </small>
                   </div>
                 </div>
               </div>

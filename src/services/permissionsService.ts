@@ -304,6 +304,12 @@ export const permissionsService = {
         moduleName: 'Requirements'
       },
       {
+        title: 'Enquiry',
+        path: '/enquiry/list',
+        icon: 'cilEnvelopeLetter',
+        moduleName: 'Enquiry'
+      },
+      {
         title: 'Payments',
         path: '/payments',
         icon: 'cilCreditCard',
@@ -335,6 +341,11 @@ export const permissionsService = {
       
       // Special handling for userType 4 (super admin) - show Requirements even if permissions aren't set
       if (userType === 4 && navItem.moduleName === 'Requirements') {
+        return true;
+      }
+      
+      // Special handling for userType 4 (super admin) - show Enquiry even if permissions aren't set
+      if (userType === 4 && navItem.moduleName === 'Enquiry') {
         return true;
       }
       

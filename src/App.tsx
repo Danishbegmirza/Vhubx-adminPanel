@@ -56,6 +56,7 @@ import AddCorporateUser from './pages/AddCorporateUser';
 import CorporateUserList from './pages/CorporateUserList';
 import EditCorporateUser from './pages/EditCorporateUser';
 import RequirementList from './pages/RequirementList';
+import EnquiryList from './pages/EnquiryList';
 
 // Import components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -260,6 +261,9 @@ const AppContent: React.FC = () => {
         
         {/* Requirements Routes */}
         <Route path="/requirements/list" element={finalIsAuthenticated ? <AuthenticatedLayout><RequirementList /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
+        
+        {/* Enquiry Routes */}
+        <Route path="/enquiry/list" element={finalIsAuthenticated ? <AuthenticatedLayout><EnquiryList /></AuthenticatedLayout> : <Navigate to="/admin" replace />} />
       </Routes>
     </div>
   );

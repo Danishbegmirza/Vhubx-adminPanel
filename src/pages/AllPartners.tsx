@@ -8,6 +8,7 @@ import { config } from '../config/env';
 
 interface Partner {
   id: number;
+  userid: number;
   organization_id: number | null;
   fullname: string;
   email: string;
@@ -208,11 +209,7 @@ const AllPartners = () => {
       'Confirm Delete',
       `Are you sure you want to delete ${partner.name_of_establishment}? This action cannot be undone.`,
       'warning',
-      () => {
-        if (selectedPartner) {
-          deletePartner(selectedPartner.id);
-        }
-      }
+      () => deletePartner(partner.userid)
     );
   };
 

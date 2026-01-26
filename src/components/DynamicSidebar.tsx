@@ -5,7 +5,7 @@ import CIcon from '@coreui/icons-react';
 import { 
   cilHome, cilPeople, cilHandshake, cilShieldAlt, cilBuilding, 
   cilNewspaper, cilBriefcase, cilCreditCard, cilBell, cilHeadphones,
-  cilPlus, cilList, cilUserPlus, cilSettings
+  cilPlus, cilList, cilUserPlus, cilSettings, cilEnvelopeLetter
 } from '@coreui/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { permissionsService, NavItem } from '../services/permissionsService';
@@ -33,7 +33,8 @@ const iconMap: { [key: string]: any } = {
   cilPlus,
   cilList,
   cilUserPlus,
-  cilSettings
+  cilSettings,
+  cilEnvelopeLetter
 };
 
 interface DynamicSidebarProps {
