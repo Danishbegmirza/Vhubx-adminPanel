@@ -410,7 +410,7 @@ const PropertyList = () => {
     setEditLoading(true);
     
     try {
-      const response = await apiService.authFetch(`${config.API_BASE_URL}/property/update/${editFormData.id}`, {
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/update/property/${editFormData.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

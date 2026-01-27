@@ -389,6 +389,46 @@ interface PropertyFormData {
   }>;
 }
 
+const stateCityData: { [key: string]: string[] } = {
+  "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Tirupati"],
+  "Arunachal Pradesh": ["Itanagar", "Naharlagun"],
+  "Assam": ["Guwahati", "Dibrugarh", "Silchar", "Jorhat"],
+  "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur"],
+  "Chhattisgarh": ["Raipur", "Bilaspur", "Durg"],
+  "Goa": ["Panaji", "Margao", "Vasco da Gama"],
+  "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot"],
+  "Haryana": ["Gurgaon", "Faridabad", "Panipat", "Ambala"],
+  "Himachal Pradesh": ["Shimla", "Manali", "Dharamshala"],
+  "Jharkhand": ["Ranchi", "Jamshedpur", "Dhanbad"],
+  "Karnataka": ["Bengaluru", "Mysuru", "Mangaluru", "Hubli"],
+  "Kerala": ["Kochi", "Thiruvananthapuram", "Kozhikode", "Thrissur"],
+  "Madhya Pradesh": ["Bhopal", "Indore", "Jabalpur", "Gwalior"],
+  "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik", "Thane"],
+  "Manipur": ["Imphal"],
+  "Meghalaya": ["Shillong"],
+  "Mizoram": ["Aizawl"],
+  "Nagaland": ["Kohima", "Dimapur"],
+  "Odisha": ["Bhubaneswar", "Cuttack", "Rourkela"],
+  "Punjab": ["Chandigarh", "Ludhiana", "Amritsar", "Jalandhar"],
+  "Rajasthan": ["Jaipur", "Udaipur", "Jodhpur", "Kota"],
+  "Sikkim": ["Gangtok"],
+  "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Trichy"],
+  "Telangana": ["Hyderabad", "Warangal", "Karimnagar"],
+  "Tripura": ["Agartala"],
+  "Uttar Pradesh": ["Lucknow", "Noida", "Kanpur", "Varanasi", "Agra"],
+  "Uttarakhand": ["Dehradun", "Haridwar", "Nainital"],
+  "West Bengal": ["Kolkata", "Siliguri", "Durgapur", "Howrah"],
+
+  "Andaman and Nicobar Islands": ["Port Blair"],
+  "Chandigarh": ["Chandigarh"],
+  "Dadra and Nagar Haveli and Daman and Diu": ["Daman", "Silvassa"],
+  "Delhi": ["New Delhi", "Dwarka", "Rohini"],
+  "Jammu and Kashmir": ["Srinagar", "Jammu"],
+  "Ladakh": ["Leh", "Kargil"],
+  "Lakshadweep": ["Kavaratti"],
+  "Puducherry": ["Puducherry", "Karaikal"]
+};
+
 const AddProperty = () => {
   const navigate = useNavigate();
   const [amenities, setAmenities] = useState<Amenity[]>([]);
@@ -433,16 +473,32 @@ const AddProperty = () => {
       const data = await response.json();
 
       if (data.status && data.data) {
-        setBrandList(data.data);
+        if(data.data.length > 0) {
+          setBrandList(data.data);
+        } else {
+          setBrandList(['other']);
+        }
       } else {
         console.error('Failed to load brand list:', data.message);
-        setBrandList([]);
+        setBrandList(['other']);
       }
     } catch (error) {
       console.error('Error fetching brand list:', error);
       setBrandList([]);
     } finally {
       setBrandListLoading(false);
+    }
+  };
+
+  // Fetch cities based on selected country and state
+  const fetchCitiesByState = async (countryName: string, stateName: string) => {
+    try {
+      console.log(`Fetching cities for country: ${countryName}, state: ${stateName}`);
+      const citiesForState = stateCityData[stateName] || [];
+      setCities(citiesForState);
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+      setCities([]);
     }
   };
 
@@ -673,6 +729,7 @@ const AddProperty = () => {
     fetchBrandList();
   }, []);
 
+  const [cities, setCities] = useState<string[]>([]);
   const [formData, setFormData] = useState<PropertyFormData>({
     // New fields with default values
     property_name: '',
@@ -954,14 +1011,35 @@ const AddProperty = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    
+
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({
         ...prev,
         [name]: checked
       }));
-    } else {
+    } else if (name === 'state_region') {
+      setFormData(prev => ({
+        ...prev,
+        state_region: value,
+        city: '' // Reset city when state changes
+      }));
+      if (value && formData.country) { // Only fetch if state and country are selected
+        fetchCitiesByState(formData.country, value);
+      } else {
+        setCities([]); // Clear cities if no state is selected
+      }
+    } else if (name === 'country') {
+      setFormData(prev => ({
+        ...prev,
+        country: value,
+        state_region: '', // Reset state and city when country changes
+        city: ''
+      }));
+      setCities([]); // Clear cities when country changes
+      // You might want to fetch states here based on the selected country
+    }
+    else {
       setFormData(prev => ({
         ...prev,
         [name]: value
@@ -3346,46 +3424,11 @@ const AddProperty = () => {
                       required
                     >
                       <option value="">Select State/Region</option>
-                      <optgroup label="States">
-                        <option value="Andhra Pradesh">Andhra Pradesh</option>
-                        <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                        <option value="Assam">Assam</option>
-                        <option value="Bihar">Bihar</option>
-                        <option value="Chhattisgarh">Chhattisgarh</option>
-                        <option value="Goa">Goa</option>
-                        <option value="Gujarat">Gujarat</option>
-                        <option value="Haryana">Haryana</option>
-                        <option value="Himachal Pradesh">Himachal Pradesh</option>
-                        <option value="Jharkhand">Jharkhand</option>
-                        <option value="Karnataka">Karnataka</option>
-                        <option value="Kerala">Kerala</option>
-                        <option value="Madhya Pradesh">Madhya Pradesh</option>
-                        <option value="Maharashtra">Maharashtra</option>
-                        <option value="Manipur">Manipur</option>
-                        <option value="Meghalaya">Meghalaya</option>
-                        <option value="Mizoram">Mizoram</option>
-                        <option value="Nagaland">Nagaland</option>
-                        <option value="Odisha">Odisha</option>
-                        <option value="Punjab">Punjab</option>
-                        <option value="Rajasthan">Rajasthan</option>
-                        <option value="Sikkim">Sikkim</option>
-                        <option value="Tamil Nadu">Tamil Nadu</option>
-                        <option value="Telangana">Telangana</option>
-                        <option value="Tripura">Tripura</option>
-                        <option value="Uttar Pradesh">Uttar Pradesh</option>
-                        <option value="Uttarakhand">Uttarakhand</option>
-                        <option value="West Bengal">West Bengal</option>
-                      </optgroup>
-                      <optgroup label="Union Territories">
-                        <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-                        <option value="Chandigarh">Chandigarh</option>
-                        <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
-                        <option value="Delhi">Delhi</option>
-                        <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-                        <option value="Ladakh">Ladakh</option>
-                        <option value="Lakshadweep">Lakshadweep</option>
-                        <option value="Puducherry">Puducherry</option>
-                      </optgroup>
+                      {Object.keys(stateCityData).map(stateName => (
+                        <option key={stateName} value={stateName}>
+                          {stateName}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -3399,16 +3442,11 @@ const AddProperty = () => {
                       required
                     >
                       <option value="">Select City</option>
-                      <option value="New Delhi">New Delhi</option>
-                      <option value="Mumbai">Mumbai</option>
-                      <option value="Bangalore">Bangalore</option>
-                      <option value="Chennai">Chennai</option>
-                      <option value="Kolkata">Kolkata</option>
-                      <option value="Hyderabad">Hyderabad</option>
-                      <option value="Pune">Pune</option>
-                      <option value="Gurgaon">Gurgaon</option>
-                      <option value="Noida">Noida</option>
-                      <option value="Other">Other</option>
+                      {cities.map(city => (
+                        <option key={city} value={city}>
+                          {city}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
