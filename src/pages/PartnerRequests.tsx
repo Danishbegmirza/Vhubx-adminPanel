@@ -157,25 +157,61 @@ const PartnerRequests = () => {
     setShowInfoModal(true);
   };
 
-  const handleApproveRequest = async (requestId: number) => {
+  const handleApproveRequest = async (userId: number) => {
     try {
-      // Placeholder for approve API
-      showAlert('Success', 'Partner request approved successfully', 'success', () => {
-        fetchPartnerRequests(currentPage, searchQuery);
-      });
+      const response = await apiService.authFetch(
+        `${config.API_BASE_URL}/user/status/${userId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json', // Ensure Content-Type is set
+          },
+          body: JSON.stringify({ status: 1 }), // 1 for approved
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.status) {
+        showAlert('Success', 'Partner request approved successfully!', 'success', () => {
+          fetchPartnerRequests(currentPage, searchQuery);
+        });
+      } else {
+        showAlert('Error', data.message || 'Failed to approve request.', 'error');
+      }
     } catch (err) {
-      showAlert('Error', 'Failed to approve request', 'error');
+      showAlert('Error', err instanceof Error ? err.message : 'An error occurred while approving the request.', 'error');
     }
   };
 
-  const handleRejectRequest = async (requestId: number) => {
+  const handleRejectRequest = async (userId: number) => {
     try {
-      // Placeholder for reject API
-      showAlert('Success', 'Partner request rejected successfully', 'success', () => {
-        fetchPartnerRequests(currentPage, searchQuery);
-      });
+      const response = await apiService.authFetch(
+        `${config.API_BASE_URL}/user/status/${userId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status: 2 }), // 2 for rejected
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.status) {
+        showAlert('Success', 'Partner request rejected successfully!', 'success', () => {
+          fetchPartnerRequests(currentPage, searchQuery);
+        });
+      } else {
+        showAlert('Error', data.message || 'Failed to reject request.', 'error');
+      }
     } catch (err) {
-      showAlert('Error', 'Failed to reject request', 'error');
+      showAlert('Error', err instanceof Error ? err.message : 'An error occurred while rejecting the request.', 'error');
     }
   };
 
@@ -355,17 +391,17 @@ const PartnerRequests = () => {
                           className="btn btn-sm btn-outline-success d-flex align-items-center justify-content-center" 
                           style={{ width: '32px', height: '32px', borderRadius: '6px' }}
                           title="Approve"
-                          onClick={() => handleApproveRequest(request.id)}
+                          onClick={() => handleApproveRequest(request.user.userid)}
                         >
-                          ✓
+                          <CIcon icon={cilCheck} />
                         </button>
                         <button 
                           className="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-center" 
                           style={{ width: '32px', height: '32px', borderRadius: '6px' }}
                           title="Reject"
-                          onClick={() => handleRejectRequest(request.id)}
+                          onClick={() => handleRejectRequest(request.user.userid)}
                         >
-                          ✗
+                          <CIcon icon={cilX} />
                         </button>
                       </div>
                     </td>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CIcon from '@coreui/icons-react';
-import { cilSearch, cilPlus, cilArrowBottom, cilFilter, cilCheck, cilX, cilArrowLeft } from '@coreui/icons';
+import { cilSearch, cilPlus, cilArrowBottom, cilFilter, cilCheck, cilX, cilArrowLeft, cilTrash } from '@coreui/icons';
 import CustomAlert from '../components/CustomAlert';
 import { apiService } from '../services/api';
 import { config } from '../config/env';
@@ -138,41 +138,33 @@ const AllUsers = () => {
     }
   };
 
-  const handleStatusChange = async (status: number) => {
-    if (!selectedRequest?.userid) return;
+  const handleStatusChange = async (user: User, newStatus: number) => {
     setActionLoading(true);
     setActionError(null);
     try {
       const response = await apiService.authFetch(
-        `${config.API_BASE_URL}/user/status/${selectedRequest.userid}`,
+        `${config.API_BASE_URL}/user/status/${user.userid}`,
         {
           method: 'PUT',
-          body: JSON.stringify({ status }),
+          body: JSON.stringify({ status: newStatus }),
         }
       );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
-      alert(status === 1 ? 'Accepted!' : 'Rejected!');
-      // Refresh the user list
-      await fetchUsers(currentPage, searchQuery, statusFilter);
+      const data = await response.json();
+      if (data.status) {
+        showAlert('Success', newStatus === 1 ? 'User activated successfully!' : 'User deactivated successfully!', 'success');
+        await fetchUsers(currentPage, searchQuery, statusFilter);
+      } else {
+        showAlert('Error', data.message || 'Failed to update user status.', 'error');
+      }
     } catch (err) {
-      setActionError('Failed to update status.');
+      showAlert('Error', err instanceof Error ? err.message : 'An error occurred while updating user status.', 'error');
     } finally {
       setActionLoading(false);
     }
-  };
-
-  const handleAccept = (user: User) => {
-    setSelectedRequest(user);
-    handleStatusChange(1);
-  };
-
-  const handleReject = (user: User) => {
-    setSelectedRequest(user);
-    handleStatusChange(2);
   };
 
   useEffect(() => {
@@ -359,24 +351,34 @@ const AllUsers = () => {
                     </td>
                     <td className="py-3">
                       <div className="d-flex gap-2">
-                        {/* <button 
-                          className="btn btn-sm btn-outline-success d-flex align-items-center justify-content-center" 
-                          style={{ width: '32px', height: '32px', borderRadius: '6px' }}
-                          title="Accept"
-                          onClick={() => handleAccept(user)}
+                        {user.status === 1 ? (
+                          <button
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => handleStatusChange(user, 2)}
+                          title="Deactivate"
                           disabled={actionLoading}
                         >
-                          ✓
-                        </button> */}
-                        <button 
-                          className="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-center" 
-                          style={{ width: '32px', height: '32px', borderRadius: '6px' }}
-                          title="Reject"
-                          onClick={() => handleReject(user)}
-                          disabled={actionLoading}
-                        >
-                          ✗
+                          <CIcon icon={cilX} size="sm" color="red" />
                         </button>
+                        ) : (
+                            <button
+                                    className="btn btn-sm btn-outline-success"
+                                    onClick={() => handleStatusChange(user, 1)}
+                                    title="Activate"
+                                    disabled={actionLoading}
+                                  >
+                                    <CIcon icon={cilCheck} size="sm" color="green" />
+                                  </button>
+                        //   <button 
+                        //   className="btn btn-sm btn-outline-success d-flex align-items-center justify-content-center" 
+                        //   style={{ width: '32px', height: '32px', borderRadius: '6px' }}
+                        //   title="Activate"
+                        //   onClick={() => handleStatusChange(user, 1)}
+                        //   disabled={actionLoading}
+                        // >
+                        //     <CIcon icon={cilCheck} size="xxl" color="green" />
+                        // </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -440,4 +442,4 @@ const AllUsers = () => {
   );
 };
 
-export default AllUsers; 
+export default AllUsers;
