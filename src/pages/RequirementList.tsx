@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useMemo, useState, useEffect } from 'react';
 import CIcon from '@coreui/icons-react';
 import { cilSearch, cilArrowBottom, cilTrash, cilCheckCircle, cilArrowLeft } from '@coreui/icons';
 import CustomAlert from '../components/CustomAlert';
 import { requirementService, Requirement } from '../services/requirementService';
 
 const RequirementList = () => {
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,10 +45,10 @@ const RequirementList = () => {
   };
 
   const handleSearch = () => {
-    // Implement search logic if needed
+    setCurrentPage(1);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
@@ -124,22 +122,24 @@ const RequirementList = () => {
     setCurrentPage(page);
   };
 
-  const filteredRequirements = requirements.filter(req => {
-    // Filter by search term
-    const matchesSearch = !searchTerm || 
-      req.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      req.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      req.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      req.mobile?.includes(searchTerm);
+  const filteredRequirements = useMemo(() => {
+    const normalizedSearch = searchTerm.toLowerCase();
 
-    // Filter by seen status
-    const matchesStatus = 
-      filterStatus === 'all' ||
-      (filterStatus === 'seen' && req.is_seen === 1) ||
-      (filterStatus === 'unseen' && req.is_seen === 0);
+    return requirements.filter((req) => {
+      const matchesSearch = !searchTerm ||
+        req.name?.toLowerCase().includes(normalizedSearch) ||
+        req.email?.toLowerCase().includes(normalizedSearch) ||
+        req.company_name?.toLowerCase().includes(normalizedSearch) ||
+        req.mobile?.includes(searchTerm);
 
-    return matchesSearch && matchesStatus;
-  });
+      const matchesStatus =
+        filterStatus === 'all' ||
+        (filterStatus === 'seen' && req.is_seen === 1) ||
+        (filterStatus === 'unseen' && req.is_seen === 0);
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [requirements, searchTerm, filterStatus]);
 
   if (loading) {
     return (
@@ -212,7 +212,7 @@ const RequirementList = () => {
                         placeholder="  Search requirements..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        onKeyPress={handleKeyPress}
+                        onKeyDown={handleSearchKeyDown}
                       />
                     </div>
                     <button 

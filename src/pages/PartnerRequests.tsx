@@ -1,54 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import CIcon from '@coreui/icons-react';
 import { cilSearch, cilArrowBottom, cilArrowLeft, cilInfo, cilCheck, cilX } from '@coreui/icons';
 import CustomAlert from '../components/CustomAlert';
-import { apiService } from '../services/api';
-import { config } from '../config/env';
+import { partnerRequestService, PartnerRequest } from '../services/partnerRequestService';
 
-interface PartnerRequest {
-  id: number;
-  type_of_establishment: string;
-  name_of_establishment: string;
-  ownership_of_property: string;
-  working_days: number;
-  opning_time: string;
-  internet_type: string;
-  no_of_seat_available_of_coworking: string;
-  area_in_sqft: string;
-  total_seating_capacity: string;
-  cabins: boolean;
-  current_occupancy_capacity: string;
-  complete_address: string;
-  pictures_of_the_space: Array<{ url: string }>;
-  city: string;
-  userid: number;
-  status: number;
-  createdAt: string;
-  updatedAt: string;
-  statusText: string;
-  createdAtFormatted: string;
-  updatedAtFormatted: string;
-  user: {
-    userid: number;
-    fullname: string;
-    email: string;
-    mobile: string;
-    profile_image: string | null;
-    status: number;
-  };
-}
-
-interface ApiResponse {
-  status: boolean;
-  statusCode: number;
-  message: string;
-  data: {
-    total: number;
-    page: number;
-    limit: number;
-    data: PartnerRequest[];
-  };
-}
+const PAGE_SIZE = 20;
+const PENDING_STATUS = 0;
 
 const PartnerRequests = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,7 +54,7 @@ const PartnerRequests = () => {
     setCurrentPage(1); // Reset to first page when searching
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
@@ -110,32 +67,19 @@ const PartnerRequests = () => {
     fetchPartnerRequests(1);
   };
 
-  const fetchPartnerRequests = async (page: number = 1, search: string = '') => {
+  const fetchPartnerRequests = useCallback(async (page: number = 1, search: string = '') => {
     try {
       setLoading(true);
       setError(null);
-      
-      let url = `${config.API_BASE_URL}/partner/list?page=${page}&limit=20`;
-      if (search) {
-        url += `&search=${encodeURIComponent(search)}`;
-      }
 
-      const response = await apiService.authFetch(url, {
-        method: 'GET'
-      });
+      const data = await partnerRequestService.getPartnerRequests(page, PAGE_SIZE, search);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: ApiResponse = await response.json();
-      
       if (data.status) {
-        // Filter only requests with status 0 (pending)
-        const pendingRequests = data.data.data.filter(request => request.status === 0);
+        // Keep only pending requests for this screen.
+        const pendingRequests = data.data.data.filter((request) => request.status === PENDING_STATUS);
         setPartnerRequests(pendingRequests);
         setTotalRequests(pendingRequests.length);
-        setTotalPages(Math.ceil(pendingRequests.length / 20));
+        setTotalPages(Math.ceil(pendingRequests.length / PAGE_SIZE));
       } else {
         throw new Error(data.message || 'Failed to fetch partner requests');
       }
@@ -145,11 +89,10 @@ const PartnerRequests = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    fetchPartnerRequests(page, searchQuery);
   };
 
   const handleViewDetails = (request: PartnerRequest) => {
@@ -157,80 +100,61 @@ const PartnerRequests = () => {
     setShowInfoModal(true);
   };
 
-  const handleApproveRequest = async (userId: number) => {
+  const updateRequestStatus = async (
+    userId: number,
+    status: 1 | 2,
+    successMessage: string,
+    fallbackErrorMessage: string
+  ) => {
     try {
-      const response = await apiService.authFetch(
-        `${config.API_BASE_URL}/user/status/${userId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json', // Ensure Content-Type is set
-          },
-          body: JSON.stringify({ status: 1 }), // 1 for approved
-        }
-      );
+      const data = await partnerRequestService.updateUserStatus(userId, status);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
       if (data.status) {
-        showAlert('Success', 'Partner request approved successfully!', 'success', () => {
+        showAlert('Success', successMessage, 'success', () => {
           fetchPartnerRequests(currentPage, searchQuery);
         });
       } else {
-        showAlert('Error', data.message || 'Failed to approve request.', 'error');
+        showAlert('Error', data.message || fallbackErrorMessage, 'error');
       }
     } catch (err) {
-      showAlert('Error', err instanceof Error ? err.message : 'An error occurred while approving the request.', 'error');
+      showAlert('Error', err instanceof Error ? err.message : fallbackErrorMessage, 'error');
     }
   };
 
-  const handleRejectRequest = async (userId: number) => {
-    try {
-      const response = await apiService.authFetch(
-        `${config.API_BASE_URL}/user/status/${userId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ status: 2 }), // 2 for rejected
-        }
-      );
+  const handleApproveRequest = async (userId: number) => {
+    await updateRequestStatus(
+      userId,
+      1,
+      'Partner request approved successfully!',
+      'An error occurred while approving the request.'
+    );
+  };
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      if (data.status) {
-        showAlert('Success', 'Partner request rejected successfully!', 'success', () => {
-          fetchPartnerRequests(currentPage, searchQuery);
-        });
-      } else {
-        showAlert('Error', data.message || 'Failed to reject request.', 'error');
-      }
-    } catch (err) {
-      showAlert('Error', err instanceof Error ? err.message : 'An error occurred while rejecting the request.', 'error');
-    }
+  const handleRejectRequest = async (userId: number) => {
+    await updateRequestStatus(
+      userId,
+      2,
+      'Partner request rejected successfully!',
+      'An error occurred while rejecting the request.'
+    );
   };
 
   useEffect(() => {
     fetchPartnerRequests(currentPage, searchQuery);
   }, [currentPage, searchQuery]);
 
-  // Filter requests based on search term
-  const filteredRequests = partnerRequests.filter(request => {
+  const filteredRequests = useMemo(() => {
     const searchLower = searchQuery.toLowerCase();
-    return (
+
+    return partnerRequests.filter((request) => (
       request.user.fullname.toLowerCase().includes(searchLower) ||
       request.user.email.toLowerCase().includes(searchLower) ||
       request.user.mobile.includes(searchQuery) ||
       request.type_of_establishment.toLowerCase().includes(searchLower) ||
       request.name_of_establishment.toLowerCase().includes(searchLower) ||
       request.ownership_of_property.toLowerCase().includes(searchLower)
-    );
-  });
+    ));
+  }, [partnerRequests, searchQuery]);
 
   if (loading) {
     return (
@@ -304,7 +228,7 @@ const PartnerRequests = () => {
                         placeholder="Search partner requests..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        onKeyPress={handleKeyPress}
+                        onKeyDown={handleSearchKeyDown}
                       />
                     </div>
                     <button 

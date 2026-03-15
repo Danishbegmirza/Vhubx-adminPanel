@@ -1,195 +1,114 @@
 # VHubX Admin Panel
 
-A modern, responsive admin panel built with React.js and Core UI components. This project provides a comprehensive dashboard for managing users, products, analytics, and system settings.
+Admin panel for operating VHubX modules like users, partners, properties, establishments, roles/permissions, amenities, requirements, enquiries, blogs, and jobs.
 
-## 🚀 Features
+## What This Repo Contains
 
-- **Modern UI/UX**: Built with Core UI components for a professional look
-- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
-- **Dashboard Analytics**: Real-time statistics and progress tracking
-- **User Management**: Complete CRUD operations for user accounts
-- **Product Management**: Inventory and product catalog management
-- **Analytics Dashboard**: Traffic sources, revenue tracking, and user activity
-- **Settings Panel**: Comprehensive system configuration options
-- **Search Functionality**: Quick search across all data tables
-- **Role-based Access**: Different user roles and permissions
+- React + TypeScript single-page admin app
+- CoreUI + Bootstrap based UI layer
+- API-driven modules under `src/pages`
+- Shared API/client logic in `src/services`
+- Auth context and protected routing for admin access
 
-## 🛠️ Technology Stack
+## Tech Stack
 
-- **React.js 19**: Latest React with TypeScript support
-- **Core UI**: Professional admin panel components
-- **React Router**: Client-side routing
-- **Bootstrap 5**: Responsive CSS framework
-- **TypeScript**: Type-safe JavaScript development
-- **Core UI Icons**: Beautiful icon library
+- React 18 (`react-scripts` / CRA setup)
+- TypeScript 4
+- React Router 7
+- CoreUI 5 and Bootstrap 5
 
-## 📦 Installation
+## Getting Started
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd vhubx-admin
-   ```
+1. Install dependencies:
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Start the development server**
-   ```bash
-   npm start
-   ```
-
-4. **Open your browser**
-   Navigate to `http://localhost:3000`
-
-## 🏗️ Project Structure
-
-```
-vhubx-admin/
-├── public/
-│   ├── index.html
-│   └── favicon.ico
-├── src/
-│   ├── pages/
-│   │   ├── Dashboard.tsx      # Main dashboard with analytics
-│   │   ├── Users.tsx          # User management
-│   │   ├── Products.tsx       # Product management
-│   │   ├── Analytics.tsx      # Detailed analytics
-│   │   └── Settings.tsx       # System settings
-│   ├── App.tsx               # Main application component
-│   ├── App.css               # Custom styles
-│   └── index.tsx             # Application entry point
-├── package.json
-├── tsconfig.json
-└── README.md
+```bash
+npm install
 ```
 
-## 🎨 Components
+2. Configure environment variables (example):
 
-### Dashboard
-- **Statistics Widgets**: Key metrics display
-- **Progress Charts**: Visual data representation
-- **User Activity Table**: Recent user interactions
-- **Revenue Tracking**: Financial performance metrics
+```bash
+REACT_APP_API_URL=http://localhost:3000/api/v1
+```
 
-### Users Management
-- **User List**: Complete user database
-- **Search & Filter**: Quick user lookup
-- **Role Management**: Admin, Moderator, User roles
-- **Status Tracking**: Active/Inactive user status
+3. Start development server:
 
-### Products Management
-- **Product Catalog**: Complete inventory
-- **Stock Management**: Real-time stock levels
-- **Category Organization**: Product categorization
-- **Price Tracking**: Cost and pricing information
+```bash
+npm start
+```
 
-### Analytics
-- **Traffic Sources**: Website traffic analysis
-- **Revenue Charts**: Financial performance
-- **User Activity**: Engagement metrics
-- **Conversion Tracking**: Performance optimization
+4. Build production bundle:
 
-### Settings
-- **General Settings**: Site configuration
-- **Notification Settings**: Alert preferences
-- **Security Settings**: Authentication options
-- **API Configuration**: Integration settings
-
-## 🎯 Key Features
-
-### Responsive Design
-- Mobile-first approach
-- Tablet and desktop optimized
-- Touch-friendly interface
-
-### Modern UI Components
-- Core UI professional components
-- Smooth animations and transitions
-- Consistent design language
-
-### Data Management
-- Real-time data updates
-- Search and filtering capabilities
-- Sortable data tables
-
-### User Experience
-- Intuitive navigation
-- Quick access to common actions
-- Contextual help and tooltips
-
-## 🔧 Customization
-
-### Styling
-The project uses custom CSS in `src/App.css` for:
-- Color schemes and gradients
-- Component styling
-- Responsive breakpoints
-- Animation effects
-
-### Adding New Pages
-1. Create a new component in `src/pages/`
-2. Add the route in `src/App.tsx`
-3. Update the navigation menu
-4. Add any required icons
-
-### Configuration
-- Update branding in `src/App.tsx`
-- Modify color schemes in `src/App.css`
-- Add new navigation items
-- Configure API endpoints
-
-## 📱 Browser Support
-
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
-
-## 🚀 Deployment
-
-### Build for Production
 ```bash
 npm run build
 ```
 
-### Deploy to Netlify
-1. Connect your repository to Netlify
-2. Set build command: `npm run build`
-3. Set publish directory: `build`
+## Scripts
 
-### Deploy to Vercel
-1. Install Vercel CLI: `npm i -g vercel`
-2. Run: `vercel`
+- `npm start` - Start dev server
+- `npm run build` - Build production assets
+- `npm test` - Run tests
 
-## 🤝 Contributing
+## Architecture Overview
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+The app follows a practical layered structure:
 
-## 📄 License
+- `src/pages`: Page-level containers (route targets, screen state, view composition)
+- `src/services`: API communication and backend contracts
+- `src/components`: Reusable visual and route guard components
+- `src/contexts`: Cross-page state (authentication)
+- `src/config`: Runtime environment configuration
 
-This project is licensed under the MIT License.
+### Runtime Flow
 
-## 🆘 Support
+1. `src/index.tsx` boots the app.
+2. `src/App.tsx` wires routes and authenticated layout.
+3. Page components call service modules for data operations.
+4. Service modules use `apiService.authFetch()` to attach auth headers and call backend APIs.
 
-For support and questions:
-- Create an issue in the repository
-- Contact the development team
-- Check the documentation
+## Project Structure
 
-## 🔄 Updates
+```text
+src/
+  App.tsx
+  components/
+    DynamicSidebar.tsx
+    ProtectedRoute.tsx
+    CustomAlert.tsx
+  config/
+    env.ts
+  contexts/
+    AuthContext.tsx
+  pages/
+    Dashboard.tsx
+    PartnerRequests.tsx
+    ...other feature screens
+  services/
+    api.ts
+    partnerRequestService.ts
+    requirementService.ts
+    ...other domain services
+```
 
-Stay updated with the latest features and improvements by:
-- Following the repository
-- Checking release notes
-- Updating dependencies regularly
+## Coding Conventions (For Reviewability)
 
----
+- Keep pages focused on UI state and rendering.
+- Move fetch/update logic to `src/services`.
+- Prefer small reusable handlers over duplicate request code.
+- Use typed response contracts for each service.
+- Avoid inline business logic in JSX when it can be extracted.
 
-**VHubX Admin Panel** - Professional admin interface for modern web applications.
+## Contribution Checklist
+
+Before opening a PR:
+
+- Ensure behavior is unchanged unless the ticket requires it.
+- Keep refactors isolated from functional changes when possible.
+- Run lint/tests locally.
+- Add/update docs when introducing new services, routes, or env vars.
+- Include screenshots for visual changes.
+
+## Notes
+
+- API base URL is resolved from `REACT_APP_API_URL` in `src/config/env.ts`.
+- Auth token is stored in localStorage and injected via `apiService.authFetch()`.

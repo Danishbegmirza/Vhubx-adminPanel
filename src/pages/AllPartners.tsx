@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CIcon from '@coreui/icons-react';
-import { cilSearch, cilPlus, cilArrowBottom, cilFilter, cilCheck, cilX, cilArrowLeft, cilPencil, cilTrash, cilMap, cilBuilding, cilPhone, cilEnvelopeOpen } from '@coreui/icons';
+import { cilSearch, cilPlus, cilX, cilPencil, cilTrash, cilMap, cilBuilding, cilPhone } from '@coreui/icons';
 import CustomAlert from '../components/CustomAlert';
 import { apiService } from '../services/api';
 import { config } from '../config/env';
@@ -48,10 +48,10 @@ interface ApiResponse {
 }
 
 const AllPartners = () => {
+  const PAGE_LIMIT = 10;
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [cityFilter, setCityFilter] = useState('all');
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -106,7 +106,7 @@ const AllPartners = () => {
     setCurrentPage(1); // Reset to first page when searching
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
@@ -125,7 +125,6 @@ const AllPartners = () => {
   const handleReset = () => {
     setSearchTerm('');
     setSearchQuery('');
-    setSelectedFilter('all');
     setStatusFilter('all');
     setCityFilter('all');
     setCurrentPage(1);
@@ -136,7 +135,7 @@ const AllPartners = () => {
     setError(null);
     
     try {
-      let url = `${config.API_BASE_URL}/vendor/list?page=${page}&limit=10`;
+      let url = `${config.API_BASE_URL}/vendor/list?page=${page}&limit=${PAGE_LIMIT}`;
       
       if (search) {
         url += `&search=${encodeURIComponent(search)}`;
@@ -188,7 +187,7 @@ const AllPartners = () => {
       if (response.ok) {
         showAlert('Success', 'Partner status updated successfully', 'success');
         // Refresh the partners list
-        fetchPartners(currentPage, searchQuery, statusFilter, cityFilter);
+        await fetchPartners(currentPage, searchQuery, statusFilter, cityFilter);
       } else {
         const errorData = await response.json().catch(() => ({}));
         setActionError(errorData.message || 'Failed to update partner status');
@@ -225,7 +224,7 @@ const AllPartners = () => {
       if (response.ok) {
         showAlert('Success', 'Partner deleted successfully', 'success');
         // Refresh the partners list
-        fetchPartners(currentPage, searchQuery, statusFilter, cityFilter);
+        await fetchPartners(currentPage, searchQuery, statusFilter, cityFilter);
       } else {
         const errorData = await response.json().catch(() => ({}));
         setActionError(errorData.message || 'Failed to delete partner');
@@ -340,7 +339,7 @@ const AllPartners = () => {
                   placeholder="Search partners by name, email, or establishment..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleSearchKeyDown}
                 />
                 <button className="btn btn-primary search-btn" onClick={handleSearch}>
                   <CIcon icon={cilSearch} className="me-1" />
@@ -509,7 +508,7 @@ const AllPartners = () => {
               <div className="d-flex justify-content-between align-items-center">
                 <div>
                   <small className="text-muted">
-                    Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, totalPartners)} of {totalPartners} partners
+                    Showing {((currentPage - 1) * PAGE_LIMIT) + 1} to {Math.min(currentPage * PAGE_LIMIT, totalPartners)} of {totalPartners} partners
                   </small>
                 </div>
                 <nav>

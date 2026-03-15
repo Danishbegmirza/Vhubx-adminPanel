@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CIcon from '@coreui/icons-react';
-import { cilSearch, cilPlus, cilArrowBottom, cilFilter, cilCheck, cilX, cilArrowLeft, cilTrash } from '@coreui/icons';
+import { cilSearch, cilPlus, cilArrowBottom, cilCheck, cilX, cilArrowLeft } from '@coreui/icons';
 import CustomAlert from '../components/CustomAlert';
 import { apiService } from '../services/api';
 import { config } from '../config/env';
@@ -34,10 +34,10 @@ interface ApiResponse {
 }
 
 const AllUsers = () => {
+  const PAGE_LIMIT = 10;
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,8 +48,6 @@ const AllUsers = () => {
   
   // Action states
   const [actionLoading, setActionLoading] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [selectedRequest, setSelectedRequest] = useState<User | null>(null);
   
   // Custom alert states
   const [alertConfig, setAlertConfig] = useState({
@@ -90,7 +88,7 @@ const AllUsers = () => {
     setCurrentPage(1); // Reset to first page when searching
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
@@ -111,9 +109,19 @@ const AllUsers = () => {
   const fetchUsers = async (page: number = 1, search: string = '', status: string = 'all') => {
     try {
       setLoading(true);
-      const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
-      const statusParam = status !== 'all' ? `&status=${status}` : '';
-      const response = await apiService.authFetch(`${config.API_BASE_URL}/user/list?page=${page}&limit=10${searchParam}${statusParam}`, {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(PAGE_LIMIT),
+      });
+
+      if (search.trim()) {
+        params.set('search', search.trim());
+      }
+      if (status !== 'all') {
+        params.set('status', status);
+      }
+
+      const response = await apiService.authFetch(`${config.API_BASE_URL}/user/list?${params.toString()}`, {
         method: 'GET'
       });
 
@@ -140,7 +148,6 @@ const AllUsers = () => {
 
   const handleStatusChange = async (user: User, newStatus: number) => {
     setActionLoading(true);
-    setActionError(null);
     try {
       const response = await apiService.authFetch(
         `${config.API_BASE_URL}/user/status/${user.userid}`,
@@ -265,7 +272,7 @@ const AllUsers = () => {
                         placeholder="  Search users..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        onKeyPress={handleKeyPress}
+                        onKeyDown={handleSearchKeyDown}
                       />
                     </div>
                     <button 
